@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Registrar | Reports{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">{% endblock %}
+{% block content %}
+<div class="report-hero"><div><span class="eyebrow">REGISTRAR DEPARTMENT</span><h1>Reports</h1><p>Enrollment statistics for leadership and operational sheets for faculty and staff. Every report can be printed or saved as PDF.</p></div></div>
+<h2 class="report-section-title">Enrollment &amp; Statistical</h2>
+<div class="report-cards" style="margin-bottom:8px">
+  <a href="{{ url_for('report_enrollment') }}"><span class="ico">📊</span><span class="eyebrow">DASHBOARD</span><b>Enrollment &amp; Statistics</b><small>Headcount vs FTE, demographics, enrollment by program and year level, transfer vs first-time freshman cohorts and year-over-year comparison.</small><span class="go">Open report →</span></a>
+</div>
+<h2 class="report-section-title">Operational &amp; Scheduling</h2>
+<p class="muted">For faculty and staff: working sheets used to finalize each semester.</p>
+<div class="report-cards">
+  <a href="{{ url_for('report_schedule') }}"><span class="ico">🗓️</span><span class="eyebrow">SCHEDULE</span><b>Master Schedule &amp; Room Utilization</b><small>Course, professor, room, capacity and actual enrollment, plus room usage and conflict check.</small><span class="go">Open report →</span></a>
+  <a href="{{ url_for('report_grades') }}"><span class="ico">📈</span><span class="eyebrow">GRADES</span><b>Grade Distribution</b><small>Average grade and spread per course, with high fail rate and grade inflation flags.</small><span class="go">Open report →</span></a>
+  <a href="{{ url_for('report_clearance') }}"><span class="ico">🎓</span><span class="eyebrow">GRADUATION</span><b>Graduation Clearance Deficiencies</b><small>Per student: units earned and the exact curriculum courses still missing.</small><span class="go">Open report →</span></a>
+</div>
+{% endblock %}

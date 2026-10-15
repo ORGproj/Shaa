@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}Accounting | Financial Reports{% endblock %}{% block content %}
+{% include "_financial_css.html" %}
+<div class="page-heading"><div><span class="eyebrow">ACCOUNTING DEPARTMENT</span><h1>Financial Reports</h1><p>Prepare, save and print the school's financial statements. Totals are calculated for you, and every report prints on A4 or saves as a PDF.</p></div>
+<form method="GET" class="fr-period"><div><label for="period">Reporting year</label><select id="period" name="period" onchange="this.form.submit()">{% for y in years %}<option value="{{ y }}" {{ 'selected' if y == period }}>{{ y }}</option>{% endfor %}</select></div></form></div>
+<div class="fr-cards">
+{% for key, spec in kinds.items() %}{% set rec = saved.get((key, period|string)) %}
+<a class="stat-card stat-link fr-card" href="{{ url_for('financial_report', kind=key, period=period) }}"><span class="num">{{ '%02d'|format(loop.index) }} · REPORT</span><h3>{{ spec.title }}</h3><p>{{ spec.blurb }}</p>{% if rec %}<span class="state on">● Saved for {{ period }} · {{ rec.updated_at|localdt('%b %d, %Y') }}</span>{% else %}<span class="state off">○ Not saved for {{ period }}</span>{% endif %}</a>
+{% endfor %}
+<a class="stat-card stat-link fr-card" href="{{ url_for('billing_statement') }}"><span class="num">{{ '%02d'|format(kinds|length + 1) }} · STATEMENT</span><h3>Billing Statement</h3><p>A student's statement of account: balance forward, charges, payments received and the balance due. Payments are pulled in from Accounting automatically.</p><span class="state {{ 'on' if statements else 'off' }}">{{ statements }} statement{{ '' if statements == 1 else 's' }} saved</span></a>
+</div>
+<section class="panel"><div class="section-title"><div><span class="eyebrow">RECENTLY SAVED</span><h2>Latest report activity</h2></div></div>
+<div class="table-wrap"><table><thead><tr><th>Report</th><th>Year</th><th>Last saved</th><th>By</th><th></th></tr></thead><tbody>{% for r in recent %}<tr><td><b>{{ kinds[r.kind].title }}</b></td><td>{{ r.period }}</td><td>{{ r.updated_at|localdt }}</td><td>{{ r.updated_by }}</td><td><a class="button small" href="{{ url_for('financial_report', kind=r.kind, period=r.period) }}">Open</a></td></tr>{% else %}<tr><td colspan="5" class="empty-state"><b>No saved reports yet</b><p>Open a report above, fill in the amounts and press Save report.</p></td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

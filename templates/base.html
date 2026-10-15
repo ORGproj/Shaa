@@ -1,0 +1,145 @@
+{% macro theme_toggle() -%}
+<button type="button" class="theme-switch" data-theme-toggle role="switch" aria-checked="false" aria-label="Dark mode" title="Switch to dark mode">
+    <span class="ts-track" aria-hidden="true">
+        <span class="ts-knob">
+            <svg class="ts-icon ts-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2.5 12h2M19.5 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            <svg class="ts-icon ts-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.8 6.8 0 0 0 9.7 9.7z"/></svg>
+        </span>
+    </span>
+</button>
+{%- endmacro %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Student Management System{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <meta name="color-scheme" content="light dark">
+    <script>
+    (function () {
+        var root = document.documentElement, theme = null;
+        root.classList.add("js");
+        try { theme = localStorage.getItem("sms-theme"); } catch (e) {}
+        if (theme !== "dark" && theme !== "light") {
+            theme = "dark";
+        }
+        root.setAttribute("data-theme", theme);
+    })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/asura.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/asura-plus.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/asura-cream.css') }}">
+    {% block head %}{% endblock %}
+    <meta name="theme-color" content="#9333ea">
+</head>
+<body class="{% if current_user %}app-page{% else %}auth-page{% endif %}">
+{% if current_user %}
+<header class="topbar">
+    <div class="brand">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Asian Institute of Computer Studies logo">
+        <div>
+            <strong>AICS Student Management System DEMO</strong>
+            <small>Asian Institute of Computer Studies · Group Project</small>
+        </div>
+    </div>
+    <div class="user-area">
+        {{ theme_toggle() }}
+        <a class="topbar-messages-icon {% if request.endpoint in ['messages','open_message'] %}active{% endif %}" href="{{ url_for('messages') }}" aria-label="Messages{% if unread_messages %}, {{ unread_messages }} unread{% endif %}" title="Messages{% if unread_messages %} ({{ unread_messages }} unread){% endif %}">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v13H4z"/><path d="m4.5 6 7.5 6 7.5-6"/></svg>
+            {% if unread_messages %}<span class="topbar-message-count">{{ unread_messages if unread_messages < 100 else '99+' }}</span>{% endif %}
+        </a>
+        <div class="profile-menu-wrap" data-profile-menu>
+            <button class="profile-menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" data-profile-menu-trigger aria-label="Open profile menu">
+                {% if current_user.profile_image %}<img class="avatar" src="{{ url_for('static', filename='uploads/' ~ current_user.profile_image) }}" alt="Profile picture">{% else %}<span class="avatar">{{ current_user.username[0]|upper }}</span>{% endif %}
+                <span class="profile-trigger-text"><b>{{ current_user.username }}</b><small>{{ current_user.role }}</small></span><span class="profile-trigger-chevron" aria-hidden="true">⌄</span>
+            </button>
+            <section class="profile-dropdown" id="profileMenu" data-profile-menu-panel hidden aria-label="Profile menu">
+                <div class="profile-dropdown-head">
+                    {% if current_user.profile_image %}<img class="profile-dropdown-avatar" src="{{ url_for('static', filename='uploads/' ~ current_user.profile_image) }}" alt="">{% else %}<span class="profile-dropdown-avatar profile-dropdown-initial">{{ current_user.username[0]|upper }}</span>{% endif %}
+                    <div class="profile-dropdown-identity"><strong>{{ current_user.username }}</strong><span>{{ current_user.role }}</span><small>NEPTUNE account</small></div>
+                </div>
+                <a class="profile-dropdown-item" href="{{ url_for('manage_account') }}"><span class="profile-item-icon">♙</span><span><strong>Profile</strong><small>View and update your account</small></span><span class="profile-item-arrow">›</span></a>
+                <a class="profile-dropdown-item" href="{{ url_for('messages') }}"><span class="profile-item-icon">☏</span><span><strong>Messages</strong><small>Department and private messages</small></span><span class="profile-item-arrow">›</span></a>
+                <a class="profile-dropdown-item" href="{{ url_for('activity_report') }}"><span class="profile-item-icon">◷</span><span><strong>History</strong><small>View available activity records</small></span><span class="profile-item-arrow">›</span></a>
+                <a class="profile-dropdown-item" href="{{ url_for('manage_account') }}"><span class="profile-item-icon">⚙</span><span><strong>Settings</strong><small>Manage your account settings</small></span><span class="profile-item-arrow">›</span></a>
+                <div class="profile-dropdown-footer">
+                    <form class="profile-logout-form" method="POST" action="{{ url_for('logout') }}" data-logout-confirm>{{ csrf_input() }}<button type="submit" class="profile-signout"><span aria-hidden="true">⇥</span> Sign out</button></form>
+                </div>
+            </section>
+        </div>
+    </div>
+</header>
+<nav class="navbar">
+    <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="navMenu"><span class="bars" aria-hidden="true"></span><span class="menu-label">Menu</span><span class="menu-current"></span></button>
+    <button type="button" class="nav-collapse-toggle" aria-expanded="true" aria-controls="navMenu" title="Hide navigation" aria-label="Hide navigation">▼</button>
+    <div class="nav-inner" id="navMenu">
+        {% if can('dashboard') %}<a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a>{% endif %}
+        {% if can('students') %}<a class="nav-link {% if request.endpoint in ['students','add_student','edit_student','student_detail'] %}active{% endif %}" href="{{ url_for('students') }}">{{ 'Registrar' if current_user.role in ['Registrar', 'Admin'] else 'Student Records' }}</a>{% endif %}
+        {% if can('sections') %}<a class="nav-link {% if request.endpoint == 'sections' %}active{% endif %}" href="{{ url_for('sections') }}">Sections</a>{% endif %}
+        {% if can('reports') %}<a class="nav-link {% if request.endpoint in ['reports','report_enrollment','report_schedule','report_grades','report_clearance'] %}active{% endif %}" href="{{ url_for('reports') }}">Reports</a>{% endif %}
+        {% if can('payments') %}<a class="nav-link {% if request.endpoint == 'payments' %}active{% endif %}" href="{{ url_for('payments') }}">Accounting</a>{% endif %}
+        {% if can('financial_reports') %}<a class="nav-link {% if request.endpoint in ['financial_reports','financial_report','billing_statement'] %}active{% endif %}" href="{{ url_for('financial_reports') }}">Financial Reports</a>{% endif %}
+        {% if can('courses') %}<a class="nav-link {% if request.endpoint == 'courses' %}active{% endif %}" href="{{ url_for('courses') }}">Courses</a>{% endif %}
+        {% if can('curriculum') %}<a class="nav-link {% if request.endpoint == 'curriculum' %}active{% endif %}" href="{{ url_for('curriculum') }}">Curriculum</a>{% endif %}
+        {% if can('grades') %}<a class="nav-link {% if request.endpoint == 'grades' %}active{% endif %}" href="{{ url_for('grades') }}">Grades</a>{% endif %}
+        {% if can('assessments') %}<a class="nav-link {% if request.endpoint == 'assessments' %}active{% endif %}" href="{{ url_for('assessments') }}">Assessments</a>{% endif %}
+        {% if can('attendance') %}<a class="nav-link {% if request.endpoint == 'attendance' %}active{% endif %}" href="{{ url_for('attendance') }}">Attendance</a>{% endif %}
+        {% if can('instructors') %}<a class="nav-link {% if request.endpoint == 'teachers' %}active{% endif %}" href="{{ url_for('teachers') }}">Instructors</a>{% endif %}
+        {% if can('timetable') %}<a class="nav-link {% if request.endpoint == 'timetable' %}active{% endif %}" href="{{ url_for('timetable') }}">Class Timetable</a>{% endif %}
+        {% if current_user.role == "Admin" %}
+            <a class="nav-link {% if request.endpoint == 'staff_management' %}active{% endif %}" href="{{ url_for('staff_management') }}">Staff Accounts</a>
+            <a class="nav-link {% if request.endpoint == 'login_security' %}active{% endif %}" href="{{ url_for('login_security') }}">Login Security{% if security_notifications_enabled and failed_alert_count %} ({{ failed_alert_count }}){% endif %}</a>
+            <form method="POST" action="{{ url_for('toggle_security_notifications') }}" style="display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .75rem">{{ csrf_input() }}<button class="button small {{ 'secondary' if not security_notifications_enabled else '' }}" type="submit" title="Turn security notifications {{ 'on' if not security_notifications_enabled else 'off' }}">{{ '🔔 Notifications On' if security_notifications_enabled else '🔕 Notifications Off' }}</button></form>
+        {% endif %}
+        {% if can('concurrency') %}<a class="nav-link {% if request.endpoint == 'concurrency' %}active{% endif %}" href="{{ url_for('concurrency') }}">Concurrency Demo</a>{% endif %}
+    </div>
+</nav>
+{% else %}
+<div class="theme-corner">{{ theme_toggle() }}</div>
+{% endif %}
+<main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-stack" role="status" aria-live="polite">
+            {% for category, message in messages %}
+                <div class="alert {{ category }}"><span>{{ message }}</span><button type="button" class="alert-close" aria-label="Dismiss message">×</button></div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+(function(){
+    var nav=document.querySelector(".navbar"); if(!nav) return;
+    var btn=nav.querySelector(".menu-toggle"), menu=nav.querySelector(".nav-inner");
+    var collapseBtn=nav.querySelector(".nav-collapse-toggle");
+    if(!menu) return;
+    if(collapseBtn){
+        collapseBtn.addEventListener("click",function(){
+            var collapsed=nav.classList.toggle("nav-collapsed");
+            collapseBtn.textContent=collapsed?"▲":"▼";
+            collapseBtn.setAttribute("aria-expanded",collapsed?"false":"true");
+            collapseBtn.setAttribute("aria-label",collapsed?"Show navigation":"Hide navigation");
+            collapseBtn.title=collapsed?"Show navigation":"Hide navigation";
+        });
+    }
+    if(!btn) return;
+    var cur=nav.querySelector(".menu-current"), act=menu.querySelector(".nav-link.active");
+    if(cur&&act){var c=act.cloneNode(true),m=c.querySelector(".mail-count");if(m)m.remove();cur.textContent=c.textContent.trim();}
+    Array.prototype.forEach.call(menu.querySelectorAll(".nav-link"),function(l,i){l.style.setProperty("--n",i);});
+    function set(o){nav.classList.toggle("open",o);btn.setAttribute("aria-expanded",o?"true":"false");}
+    btn.addEventListener("click",function(e){e.stopPropagation();set(!nav.classList.contains("open"));});
+    menu.addEventListener("click",function(e){if(e.target.closest("a"))set(false);});
+    document.addEventListener("click",function(e){if(!nav.contains(e.target))set(false);});
+    document.addEventListener("keydown",function(e){if(e.key==="Escape")set(false);});
+    window.addEventListener("resize",function(){if(window.innerWidth>900)set(false);});
+})();
+</script>
+</body>
+</html>

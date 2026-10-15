@@ -1,0 +1,100 @@
+{% extends "base.html" %}{% block title %}Accounting | Payments<script>
+(() => {
+  const sectionFilter = document.getElementById('section_filter');
+  const studentSelect = document.getElementById('student_lookup');
+  if (!sectionFilter || !studentSelect) return;
+  const allOptions = Array.from(studentSelect.options).slice(1);
+  function filterStudents() {
+    const section = sectionFilter.value;
+    const previous = studentSelect.value;
+    allOptions.forEach(option => {
+      option.hidden = section !== 'all' && option.dataset.section !== section;
+      option.disabled = option.hidden;
+    });
+    if (previous && !allOptions.some(option => option.value === previous && !option.hidden)) {
+      studentSelect.value = '';
+    }
+    const visible = allOptions.filter(option => !option.hidden).length;
+    studentSelect.options[0].textContent = visible ? 'Choose a student…' : 'No students in this section';
+  }
+  sectionFilter.addEventListener('change', filterStudents);
+  filterStudents();
+})();
+</script>
+{% endblock %}{% block content %}
+<div class="page-heading"><div><span class="eyebrow">ACCOUNTING DEPARTMENT</span><h1>Payments</h1><p>Record financial transactions and find older receipts without cluttering the daily view.</p></div></div>
+<div class="cards"><div class="stat-card"><span>Selected period received</span><strong>₱{{ "{:,.2f}".format(total) }}</strong><small>Matches your current date/search filters</small></div><div class="stat-card"><span>All-time recorded payments</span><strong>₱{{ "{:,.2f}".format(all_time_total) }}</strong><small>Lifetime total; never resets or deletes records</small></div><div class="stat-card"><span>Matching transactions</span><strong>{{ payments|length }}</strong><small>Up to 500 rows shown; saved records remain intact</small></div></div>
+<div class="grid-2">{% if can('payments','create') %}<section class="panel"><span class="eyebrow">NEW TRANSACTION</span><h2>Record Payment</h2><form method="POST">{{ csrf_input() }}<input type="hidden" name="submit_token" value="{{ pay_token }}"><label for="section_filter">Filter students by section</label><select id="section_filter"><option value="all">All sections</option>{% for section in sections %}<option value="{{ section.id }}">{{ section.name }}</option>{% endfor %}<option value="none">No section assigned</option></select><label for="student_lookup">Select student</label><select id="student_lookup" name="student_lookup" required><option value="">Choose a student…</option>{% for student in students %}<option value="{{ student.student_number }}" data-section="{{ student.section_id if student.section_id is not none else 'none' }}">{{ student.student_number }}-{{ student.first_name }} {{ student.last_name }}{% if student.section %} ({{ student.section.name }}){% else %} (No section){% endif %}</option>{% endfor %}</select><small class="muted">Choose a section above to narrow the student list, then click the student you want.</small><label for="amount">Amount</label><div class="input-prefix"><span>₱</span><input id="amount" type="text" inputmode="decimal" name="amount" placeholder="0.00" required></div><p class="amount-hint"></p><label for="payment_type">Payment Type</label><select id="payment_type" name="payment_type" required>{% for type in payment_types %}<option value="{{ type }}">{{ type }}</option>{% endfor %}</select><label>Reference Number</label><div class="highlight">The system generates a unique 11-digit numeric reference for every payment.</div><button class="button primary full" type="submit">Record Payment</button></form></section>{% endif %}
+<section class="panel"><span class="eyebrow">SAVED TRANSACTION HISTORY</span><h2>Find Payments</h2><form method="GET"><label for="search">Search reference, student, or payment type</label><input id="search" type="search" name="search" value="{{ search }}" placeholder="e.g. 1024 or Juan"/><div class="form-grid"><div><label for="day">Specific date</label><input id="day" type="date" name="day" value="{{ day }}"></div><div><label for="date_from">From date</label><input id="date_from" type="date" name="date_from" value="{{ date_from }}"></div><div><label for="date_to">To date</label><input id="date_to" type="date" name="date_to" value="{{ date_to }}"></div></div><div class="quick-actions"><button class="button primary" type="submit">Apply Filters</button><a class="button" href="{{ url_for('payments') }}">Today</a></div><div class="quick-actions date-presets" aria-label="Quick date filters"><button class="button" type="button" data-date-preset="7days">Last 7 days</button><button class="button" type="button" data-date-preset="month">This month</button><button class="button" type="button" data-date-preset="all">All saved dates</button></div><input type="hidden" id="all_dates" name="all_dates" value="0"></form></section></div>
+<section class="panel"><div class="section-title"><div><span class="eyebrow">TRANSACTION HISTORY</span><h2>Saved Payments</h2></div></div><div class="history-scroll"><table><thead><tr><th>Student</th><th>Amount</th><th>Type</th><th>Reference</th><th>Date & Time</th></tr></thead><tbody>{% for payment in payments %}<tr><td><b>{{ payment.student.student_number }}</b><span class="subtext">{{ payment.student.first_name }} {{ payment.student.last_name }}</span></td><td><b>₱{{ "{:,.2f}".format(payment.amount) }}</b></td><td>{{ payment.payment_type }}</td><td><b>{{ payment.reference }}</b></td><td>{{ payment.payment_date|localdt }}</td></tr>{% else %}<tr><td colspan="5"><div class="empty-state"><b>No matching payments</b><p>Try another reference number or date range.</p></div></td></tr>{% endfor %}</tbody></table></div></section><section class="panel"><div class="section-title"><div><span class="eyebrow">ACCOUNTING WORKFLOW</span><h2>Core Responsibilities</h2></div></div>
+<div class="grid-2">
+<div><h3>Record-Keeping & Tracking</h3><p class="muted">Record dated transactions, search receipts, and review accounts receivable information. Bank reconciliation and payable workflows are future extensions.</p></div>
+<div><h3>Financial Reporting</h3><p class="muted">Payment history can be filtered by day or date range. Balance sheets, income statements, cash-flow reports, budgets and billing statements are on the <a href="{{ url_for('financial_reports') }}">Financial Reports</a> page.</p></div>
+<div><h3>Budgeting & Forecasting</h3><p class="muted">Payment history can support future budget reviews. Budget plans and forecasting models are not currently automated.</p></div>
+<div><h3>Auditing & Risk Control</h3><p class="muted">Reference numbers and activity logs support traceability. Review records regularly and restrict access to authorized staff.</p></div>
+</div></section>
+<script>
+(() => {
+  const sectionFilter = document.getElementById('section_filter');
+  const studentSelect = document.getElementById('student_lookup');
+  if (!sectionFilter || !studentSelect) return;
+  const allOptions = Array.from(studentSelect.options).slice(1);
+  function filterStudents() {
+    const section = sectionFilter.value;
+    const previous = studentSelect.value;
+    allOptions.forEach(option => {
+      option.hidden = section !== 'all' && option.dataset.section !== section;
+      option.disabled = option.hidden;
+    });
+    if (previous && !allOptions.some(option => option.value === previous && !option.hidden)) {
+      studentSelect.value = '';
+    }
+    const visible = allOptions.filter(option => !option.hidden).length;
+    studentSelect.options[0].textContent = visible ? 'Choose a student…' : 'No students in this section';
+  }
+  sectionFilter.addEventListener('change', filterStudents);
+  filterStudents();
+})();
+</script>
+
+<script>
+(() => {
+  const form = document.querySelector('form[method="GET"]');
+  if (!form) return;
+  const day = document.getElementById('day');
+  const from = document.getElementById('date_from');
+  const to = document.getElementById('date_to');
+  const allDates = document.getElementById('all_dates');
+  const dateOnly = d => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  };
+  form.querySelectorAll('[data-date-preset]').forEach(button => {
+    button.addEventListener('click', () => {
+      const preset = button.dataset.datePreset;
+      day.value = '';
+      from.value = '';
+      to.value = '';
+      allDates.value = '0';
+      if (preset === '7days') {
+        const today = new Date();
+        const start = new Date(today);
+        start.setDate(today.getDate() - 6);
+        from.value = dateOnly(start);
+        to.value = dateOnly(today);
+      } else if (preset === 'month') {
+        const today = new Date();
+        from.value = dateOnly(new Date(today.getFullYear(), today.getMonth(), 1));
+        to.value = dateOnly(today);
+      } else if (preset === 'all') {
+        allDates.value = '1';
+      }
+      form.requestSubmit();
+    });
+  });
+})();
+</script>
+
+{% endblock %}

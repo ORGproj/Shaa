@@ -1,0 +1,161 @@
+/* =====================================================================
+   Asura+ : the "tuff" layer. Glass, neon, aurora, motion.
+   Loads after style.css and asura.css. Reduced-motion users get the
+   static version automatically (style.css kills animations globally).
+   ===================================================================== */
+@property --a{syntax:"<angle>";initial-value:0deg;inherits:false}
+:root{--glass:rgba(255,255,255,.78);--ring:rgba(147,51,234,.25);--fx:cubic-bezier(.22,.8,.3,1)}
+html[data-theme="dark"]{--glass:rgba(24,22,32,.66);--ring:rgba(168,85,247,.22)}
+::selection{background:#9333ea;color:#fff}
+h1,h2,h3,.brand strong,.stat-card strong,.counter-number,.error-code,.demo-banner b{font-family:"Space Grotesk",Inter,"Segoe UI",sans-serif;letter-spacing:-.02em}
+
+/* ---------- Aurora + grid backdrop ---------- */
+body.app-page::before,body.auth-page::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;filter:blur(24px);
+ background:radial-gradient(40% 35% at 18% 18%,rgba(147,51,234,.38),transparent 70%),radial-gradient(35% 30% at 82% 8%,rgba(192,38,211,.26),transparent 70%),radial-gradient(40% 35% at 70% 92%,rgba(251,191,36,.13),transparent 70%);
+ animation:aurora 22s ease-in-out infinite alternate}
+@keyframes aurora{to{transform:translate3d(4%,3%,0) rotate(6deg) scale(1.1)}}
+body.app-page::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-size:46px 46px;
+ background-image:linear-gradient(rgba(168,85,247,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,.07) 1px,transparent 1px);
+ -webkit-mask-image:radial-gradient(70% 60% at 50% 0,#000,transparent 80%);mask-image:radial-gradient(70% 60% at 50% 0,#000,transparent 80%)}
+html[data-theme="light"] body::before{opacity:.5}
+
+/* ---------- Header: flowing gradient + glowing logo ---------- */
+html[data-theme] .topbar{background:linear-gradient(110deg,#6d1fc7,#9333ea 40%,#c026d3 70%,#9333ea);background-size:220% 100%;animation:flow 12s linear infinite;box-shadow:0 12px 40px -12px rgba(147,51,234,.75);position:relative;z-index:12}
+@keyframes flow{to{background-position:-220% 0}}
+.brand img{box-shadow:0 0 0 3px rgba(255,255,255,.28),0 0 26px rgba(251,191,36,.65);animation:logoGlow 3.2s ease-in-out infinite}
+@keyframes logoGlow{50%{box-shadow:0 0 0 3px rgba(255,255,255,.45),0 0 40px rgba(251,191,36,.95)}}
+.brand strong{background:linear-gradient(90deg,#fff,#fde68a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+/* ---------- Nav: dark glass bar, neon pill ---------- */
+html[data-theme] .navbar{background:rgba(14,10,24,.74);-webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);border-bottom:1px solid rgba(168,85,247,.28)}
+html[data-theme] .nav-inner{padding:8px 20px}
+html[data-theme] .nav-link{color:rgba(255,255,255,.68)}
+html[data-theme] .nav-link:hover{background:rgba(147,51,234,.2);color:#fff;transform:translateY(-1px)}
+html[data-theme] .nav-link.active{background:linear-gradient(135deg,#9333ea,#c026d3);color:#fff;box-shadow:0 6px 22px -4px rgba(192,38,211,.75)}
+.js .nav-link.active{animation:pillIn .6s var(--fx) .15s both}
+@keyframes pillIn{from{opacity:0;transform:scale(.8)}}
+
+/* ---------- Headings ---------- */
+html[data-theme] .hero-heading h1,html[data-theme] .page-heading h1{font-size:clamp(28px,4vw,42px);background:linear-gradient(90deg,var(--text) 30%,#c084fc 65%,var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero-heading h1::after,.page-heading h1::after{content:"";display:block;width:60px;height:4px;margin-top:8px;border-radius:4px;background:linear-gradient(90deg,#9333ea,#fbbf24);animation:bar .9s var(--fx) .2s both}
+@keyframes bar{from{width:0}}
+html[data-theme] .eyebrow{letter-spacing:.22em;font-weight:800}
+
+/* ---------- Glass panels + stat cards ---------- */
+html[data-theme] .panel,html[data-theme] .stat-card{background:var(--glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--ring);border-radius:18px}
+html[data-theme] .stat-card{background:linear-gradient(180deg,rgba(168,85,247,.12),transparent 55%),var(--glass)}
+html[data-theme] .panel:hover{border-color:rgba(168,85,247,.6);box-shadow:0 26px 60px -26px rgba(147,51,234,.7),0 0 0 1px rgba(168,85,247,.25)}
+html[data-theme] .stat-card:hover{transform:translateY(-6px) scale(1.015);box-shadow:0 26px 50px -22px rgba(147,51,234,.8)}
+html[data-theme] .stat-card strong{font-size:38px;background:linear-gradient(135deg,var(--text) 35%,#a855f7);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.js .reveal{filter:blur(6px);transition:opacity .7s var(--fx),transform .7s var(--fx),filter .7s var(--fx);transition-delay:var(--d,0ms)}
+.js .reveal.in{filter:none}
+html[data-theme] .status-pill{box-shadow:0 0 0 1px rgba(74,222,128,.35),0 0 22px rgba(74,222,128,.25)}
+.panel h2::before{animation:starSpin 6s linear infinite}
+@keyframes starSpin{50%{transform:rotate(180deg) scale(1.15)}100%{transform:rotate(360deg)}}
+
+/* ---------- Buttons: gradient, glow, shimmer sweep ---------- */
+html[data-theme] .button.primary{background:linear-gradient(135deg,#9333ea,#c026d3);border-color:transparent;box-shadow:0 8px 24px -8px rgba(192,38,211,.85)}
+html[data-theme] .button.primary::before{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.38) 50%,transparent 70%);transform:translateX(-120%)}
+html[data-theme] .button.primary:hover{background:linear-gradient(135deg,#a855f7,#d946ef);border-color:transparent;transform:translateY(-2px) scale(1.03)}
+html[data-theme] .button.primary:hover::before{transform:translateX(120%);transition:transform .7s var(--fx)}
+html[data-theme] .button:not(.primary):hover{border-color:var(--purple-hi);box-shadow:0 0 0 3px rgba(147,51,234,.18)}
+
+/* ---------- Tables, badges, inputs ---------- */
+html[data-theme] th{background:linear-gradient(180deg,rgba(147,51,234,.2),rgba(147,51,234,.06));color:var(--primary)}
+html[data-theme] tbody tr:hover{background:linear-gradient(90deg,rgba(147,51,234,.18),transparent 80%)}
+.badge.active,.badge.present{box-shadow:0 0 14px rgba(74,222,128,.28)}
+.badge.absent{box-shadow:0 0 14px rgba(255,139,130,.25)}
+html[data-theme="dark"] input,html[data-theme="dark"] select{background:rgba(255,255,255,.04)}
+html[data-theme] input:focus,html[data-theme] select:focus{transform:translateY(-1px);box-shadow:0 0 0 4px rgba(147,51,234,.25),0 10px 24px -10px rgba(147,51,234,.7)}
+
+/* ---------- Login: glass card with spinning neon border ---------- */
+html[data-theme] .login-card{background:var(--glass);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:0;border-radius:22px}
+.login-card::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;background:conic-gradient(from var(--a),#9333ea,#fbbf24,#c026d3,#9333ea);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:borderSpin 5s linear infinite}
+@keyframes borderSpin{to{--a:360deg}}
+
+/* ---------- Phone: collapse all nav links into one menu ---------- */
+.menu-toggle{display:none}
+@media(max-width:900px){
+ html[data-theme] .navbar{padding:8px 12px}
+ .menu-toggle{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border:1px solid rgba(168,85,247,.38);border-radius:12px;background:rgba(147,51,234,.18);color:#fff;font:600 15px "Space Grotesk",Inter,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .2s,transform .2s var(--fx)}
+ .menu-toggle:active{transform:scale(.98)}
+ .menu-toggle .bars,.menu-toggle .bars::before,.menu-toggle .bars::after{display:block;width:20px;height:2px;background:#fff;border-radius:2px}
+ .menu-toggle .bars{position:relative;flex:none;transition:background .2s}
+ .menu-toggle .bars::before,.menu-toggle .bars::after{content:"";position:absolute;left:0;transition:transform .3s var(--fx)}
+ .menu-toggle .bars::before{top:-6px}.menu-toggle .bars::after{top:6px}
+ .navbar.open .menu-toggle .bars{background:transparent}
+ .navbar.open .menu-toggle .bars::before{transform:translateY(6px) rotate(45deg)}
+ .navbar.open .menu-toggle .bars::after{transform:translateY(-6px) rotate(-45deg)}
+ .menu-label{flex:1;text-align:left}
+ .menu-current{padding:3px 10px;border-radius:999px;background:linear-gradient(135deg,#9333ea,#c026d3);font-size:12px;font-weight:600}
+ .menu-current:empty{display:none}
+ html[data-theme] .nav-inner{position:absolute;left:12px;right:12px;top:calc(100% + 6px);margin:0;max-width:none;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:2px;padding:8px;max-height:calc(100vh - 130px);overflow-y:auto;background:rgba(14,10,24,.97);border:1px solid rgba(168,85,247,.38);border-radius:16px;box-shadow:0 30px 60px -20px rgba(0,0,0,.85),0 0 40px -10px rgba(147,51,234,.55);opacity:0;visibility:hidden;transform:translateY(-8px) scale(.98);transform-origin:top;transition:opacity .25s var(--fx),transform .3s var(--fx),visibility 0s .3s}
+ .navbar.open .nav-inner{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+ html[data-theme] .nav-link{justify-content:flex-start;min-height:46px;padding:12px 14px;font-size:15px}
+ .navbar.open .nav-link{animation:linkIn .38s var(--fx) both;animation-delay:calc(var(--n,0)*28ms)}
+ @keyframes linkIn{from{opacity:0;transform:translateX(-14px)}}
+}
+
+
+/* =====================================================================
+   PERFORMANCE PASS  (same look, far fewer repaints)
+   - no blur() filter on the animated backdrop, no backdrop-filter on cards
+   - infinite colour/box-shadow/background-position loops removed
+   - heavy decoration switched off on phones / touch devices
+   ===================================================================== */
+html{-webkit-tap-highlight-color:transparent}
+a,button,input,select,label{touch-action:manipulation}
+:root{--glass:rgba(255,255,255,.92)}
+html[data-theme="dark"]{--glass:rgba(22,20,30,.9)}
+
+/* backdrop: transform-only animation on its own GPU layer */
+body.app-page::before,body.auth-page::before{filter:none;inset:-10%;will-change:transform;animation-duration:32s}
+html[data-theme] .panel,html[data-theme] .stat-card{-webkit-backdrop-filter:none;backdrop-filter:none}
+html[data-theme] .navbar{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+
+/* header: static gradient + static glow */
+html[data-theme] .topbar{animation:none}
+.brand img{animation:none;box-shadow:0 0 0 3px rgba(255,255,255,.28),0 0 22px rgba(251,191,36,.55)}
+
+/* star icon: spins on hover instead of forever */
+.panel h2::before{animation:none;transition:transform .6s var(--fx)}
+.panel:hover h2::before{transform:rotate(180deg) scale(1.1)}
+
+/* scroll reveal: opacity + transform only (blur filter was expensive) */
+.js .reveal{filter:none;transition:opacity .5s var(--fx),transform .5s var(--fx);transition-delay:var(--d,0ms)}
+.js .reveal.in{filter:none}
+
+/* looping effects from style.css that repaint every frame */
+html[data-theme] .workflow-step{animation:none}
+.status-pill span{animation:none}
+.login-card h1{animation:none}
+.login-wrapper::before,.login-wrapper::after{filter:none;animation:none}
+html[data-theme] .login-wrapper::before,html[data-theme] .login-wrapper::after{opacity:1}
+.login-wrapper::before{background:radial-gradient(circle,rgba(147,51,234,.42),transparent 65%)}
+.login-wrapper::after{background:radial-gradient(circle,rgba(251,191,36,.22),transparent 65%)}
+
+/* long tables: cap the row stagger so 100 rows don't animate for 3.5s */
+.js tbody tr.row-anim{animation-delay:min(calc(var(--i,0)*35ms),350ms)}
+
+/* skip rendering panels that are off-screen */
+@media screen{.panel{content-visibility:auto;contain-intrinsic-size:auto 420px}}
+
+/* phones / narrow screens */
+@media(max-width:900px){
+ body.app-page::after{display:none}
+ body.app-page::before,body.auth-page::before{animation:none;will-change:auto}
+ html[data-theme] .navbar{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(14,10,24,.97)}
+ .login-card::before{animation:none}
+ html[data-theme] .stat-card:hover,html[data-theme] .stat-link:hover{transform:none}
+}
+/* touch devices: no cursor-following spotlight */
+@media(hover:none){.stat-card::before,.workflow-step::before,.demo-banner div::before{display:none}}
+
+
+/* Desktop navigation collapse control */
+.navbar{position:sticky}
+.nav-collapse-toggle{position:absolute;right:14px;top:8px;z-index:2;display:flex;align-items:center;justify-content:center;width:30px;height:28px;border:1px solid rgba(168,85,247,.38);border-radius:7px;background:rgba(147,51,234,.16);color:inherit;font-size:13px;cursor:pointer;transition:background .2s,transform .2s}
+.nav-collapse-toggle:hover{background:rgba(147,51,234,.32)}
+.navbar.nav-collapsed .nav-inner{display:none!important}
+html[data-theme] .nav-collapse-toggle{color:#fff}
+@media(max-width:900px){.nav-collapse-toggle{display:none}}

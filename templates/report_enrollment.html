@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_report_macros.html" import pie, bars %}
+{% block title %}Registrar | Enrollment &amp; Statistics{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">{% endblock %}
+{% block content %}
+<div class="report-hero"><div><span class="eyebrow">REGISTRAR · STATISTICAL REPORT</span><h1>Enrollment &amp; Statistics</h1><p>Snapshot of currently enrolled (Active) students as of {{ today.strftime('%B %d, %Y') }}.</p></div><div class="quick-actions no-print"><a class="button" href="{{ url_for('reports') }}">← Reports</a><button class="button primary" type="button" onclick="window.print()">Print / Save as PDF</button></div></div>
+<div class="print-head"><h2>Enrollment &amp; Statistical Report</h2><p>As of {{ today.strftime('%B %d, %Y') }}</p></div>
+
+<div class="report-kpis">
+  <div><b>{{ headcount }}</b><span>Total headcount (Active)</span></div>
+  <div><b>{{ fte }}</b><span>Full-time equivalent (FTE)</span></div>
+  <div><b>{{ full }} / {{ headcount - full }}</b><span>Full-time / part-time</span></div>
+  <div><b>{{ status_counts.get('Inactive', 0) }}</b><span>Inactive records</span></div>
+  <div><b>{{ status_counts.get('Graduated', 0) }}</b><span>Graduated</span></div>
+</div>
+
+<section class="panel"><span class="sec-badge">1</span><h2>Headcount vs. Full-Time Equivalent</h2>
+<p class="muted">FTE counts each full-time student as 1 and each part-time student as {{ '%.2f'|format(fte_weight) }}.</p>
+<div class="report-grid">
+  <div class="chart-card"><h3>Headcount and FTE by program</h3>
+  {% if by_program %}<div class="bar-list">{% for r in by_program %}<div class="bar-row" style="grid-template-columns:minmax(90px,170px) 1fr auto"><span class="bar-label" title="{{ r.label }}">{{ r.label }}</span><div class="bar-track"><div class="bar-fill" style="width:{{ r.bar }}%"></div></div><b>{{ r.headcount }} <span class="muted" style="font-weight:400">/ {{ r.fte }} FTE</span></b></div>{% endfor %}</div>{% else %}<p class="muted">No active students yet.</p>{% endif %}</div>
+  <div class="table-wrap"><table class="report-table" data-no-filter><thead><tr><th>Year level</th><th class="num">Headcount</th><th class="num">Full-time</th><th class="num">Part-time</th><th class="num">FTE</th></tr></thead><tbody>
+  {% for r in by_year %}<tr><td>{{ r.label }}</td><td class="num">{{ r.headcount }}</td><td class="num">{{ r.full }}</td><td class="num">{{ r.part }}</td><td class="num">{{ r.fte }}</td></tr>{% else %}<tr><td colspan="5" class="empty">No active students yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+</div></section>
+
+<section class="panel"><span class="sec-badge">2</span><h2>Demographic Breakdown</h2>
+<div class="report-grid">
+  <div class="chart-card"><h3>Gender</h3>{{ pie(gender_chart) }}</div>
+  <div class="chart-card"><h3>Age group</h3>{{ pie(age_chart) }}</div>
+  <div class="chart-card"><h3>Residency</h3>{{ bars(residency_chart) }}</div>
+</div>
+<p class="muted">Gender, birth date and residency are optional fields on the student record; students without them appear as "Not recorded".</p></section>
+
+<section class="panel report-sheet"><span class="sec-badge">3</span><h2>Enrollment Distribution by Program</h2>
+<div class="report-grid"><div class="chart-card"><h3>Headcount by program</h3>{{ bars(program_chart) }}</div><div class="chart-card"><h3>Share of enrollment</h3>{{ pie(program_chart) }}</div></div></section>
+
+<section class="panel"><span class="sec-badge">4</span><h2>Transfer vs. First-Time Freshman Cohorts</h2>
+<div class="report-grid"><div class="chart-card"><h3>Currently enrolled, by student type</h3>{{ pie(type_chart) }}</div></div>
+<h3 style="margin-top:18px">Year-over-year admissions</h3>
+<div class="table-wrap"><table class="report-table" data-no-filter><thead><tr><th>Admission year</th><th class="num">First-time freshmen</th><th class="num">Still enrolled</th><th class="num">Transfers</th><th class="num">Still enrolled</th><th class="num">Total admitted</th><th class="num">Transfer share</th><th class="num">YoY change</th><th style="min-width:120px">Total</th></tr></thead><tbody>
+{% for r in cohort_rows %}<tr><td><b>{{ r.year }}</b></td><td class="num">{{ r.freshman }}</td><td class="num">{{ r.freshman_active }}{% if r.freshman_retained is not none %} ({{ r.freshman_retained }}%){% endif %}</td><td class="num">{{ r.transfer }}</td><td class="num">{{ r.transfer_active }}{% if r.transfer_retained is not none %} ({{ r.transfer_retained }}%){% endif %}</td><td class="num"><b>{{ r.total }}</b></td><td class="num">{{ r.transfer_share }}%</td><td class="num">{% if r.change is none %}-{% else %}{{ '+' if r.change > 0 }}{{ r.change }}%{% endif %}</td><td><div class="bar-track"><div class="bar-fill" style="width:{{ r.bar }}%"></div></div></td></tr>{% else %}<tr><td colspan="9" class="empty">No students yet.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="muted">The system has no applicant data, so "still enrolled" (students from that intake whose status is still Active) is used as the yield measure. YoY change compares each year's total intake with the previous year.</p></section>
+{% endblock %}

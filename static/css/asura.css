@@ -1,0 +1,85 @@
+/* =====================================================================
+   Asura-style theme layer. Loaded AFTER style.css; overrides tokens and
+   the few hard-coded blue/gold colours. Dark is the default look, light
+   keeps the same purple/gold accents. Class names are unchanged.
+   ===================================================================== */
+:root{--purple:#9333ea;--purple-hi:#a855f7;--gold:#fbbf24;
+ --primary:#7e22ce;--primary-dark:#581c87;--accent:#f59e0b;
+ --background:#f6f3fb;--surface:#fff;--border:#e6e0f2;--text:#1c1630;--muted:#6b6485;
+ --shadow:0 8px 24px rgba(76,29,149,.07)}
+@media screen{html[data-theme="dark"]{color-scheme:dark;scrollbar-color:#3a3a48 #0c0c10;
+ --primary:#c9a7ff;--primary-dark:#eadcff;--accent:#fbbf24;
+ --background:#0c0c10;--surface:#16161c;--surface-2:#1d1d25;--surface-3:#272732;
+ --border:#2a2a35;--border-strong:#3a3a48;--row-hover:#1c1a26;--text:#f4f4f7;--muted:#9a9aab;--shadow:none}
+ html[data-theme="dark"] body.app-page{background:radial-gradient(900px 340px at 50% -90px,rgba(147,51,234,.3),transparent 70%) no-repeat,var(--background)}
+ html[data-theme="dark"] ::-webkit-scrollbar{width:10px;height:10px}
+ html[data-theme="dark"] ::-webkit-scrollbar-track{background:#0c0c10}
+ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#3a3a48;border-radius:8px;border:2px solid #0c0c10}}
+
+/* ---------- Purple header + nav (one continuous bar) ---------- */
+html[data-theme] .topbar{background:var(--purple);padding-top:12px;padding-bottom:10px}
+html[data-theme] .topbar::after{display:none}
+html[data-theme] .navbar{background:var(--purple);border:0}
+html[data-theme] .navbar.scrolled{box-shadow:0 8px 20px rgba(0,0,0,.35)}
+html[data-theme] .nav-inner{padding:0 20px 10px;gap:4px}
+html[data-theme] .nav-link{color:rgba(255,255,255,.85);min-height:38px;padding:8px 14px;border-radius:10px;font-weight:600;font-size:14px}
+html[data-theme] .nav-link::after{display:none}
+html[data-theme] .nav-link:hover{background:rgba(255,255,255,.14);color:#fff;transform:none}
+html[data-theme] .nav-link.active{background:rgba(0,0,0,.28);color:#fff}
+html[data-theme] .user-chip{background:rgba(0,0,0,.24);padding:5px 14px 5px 5px;border-radius:12px}
+html[data-theme] .logout-link{background:rgba(0,0,0,.24);border:0;border-radius:10px;font-weight:600}
+html[data-theme] .logout-link:hover{background:rgba(0,0,0,.42)}
+html[data-theme] .logout-form .logout-link{background:rgba(251,191,36,.18);color:var(--gold)}
+.page-progress{background:linear-gradient(90deg,var(--purple),var(--gold));box-shadow:0 0 10px rgba(147,51,234,.6)}
+
+/* ---------- Panels, headings, stat cards ---------- */
+html[data-theme] .hero-heading h1,html[data-theme] .page-heading h1,html[data-theme] .panel h2{color:var(--text)}
+html[data-theme] .eyebrow{color:#a16207}
+html[data-theme="dark"] .eyebrow{color:var(--gold)}
+.panel h2{display:flex;align-items:center;gap:10px}
+.panel h2::before{content:"\2605";display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;border-radius:8px;background:rgba(147,51,234,.2);color:#b66dff;font-size:13px}
+html[data-theme] .panel:hover{border-color:rgba(147,51,234,.45);box-shadow:0 12px 30px rgba(76,29,149,.18)}
+html[data-theme] .stat-card strong{color:var(--text)}
+html[data-theme] .stat-link:hover{border-color:rgba(147,51,234,.6)}
+.stat-card::after{background:linear-gradient(90deg,var(--purple),var(--gold))}
+.stat-card::before,.workflow-step::before,.demo-banner div::before{background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(147,51,234,.2),transparent 60%)}
+html[data-theme] .demo-banner div{background:linear-gradient(135deg,#6b21a8,#9333ea);border:0}
+
+/* ---------- Buttons ---------- */
+html[data-theme] .button{border-radius:10px}
+html[data-theme] .button.primary{background:var(--purple);border-color:var(--purple);color:#fff}
+html[data-theme] .button.primary:hover{background:var(--purple-hi);border-color:var(--purple-hi);box-shadow:0 10px 22px rgba(147,51,234,.4)}
+html[data-theme="dark"] .button:hover{border-color:#5b4a85}
+html[data-theme] .to-top{background:var(--purple)}
+html[data-theme] .to-top:hover{background:var(--purple-hi)}
+
+/* ---------- Tables ---------- */
+html[data-theme] th{letter-spacing:.8px}
+html[data-theme] tbody tr:hover{background:rgba(147,51,234,.08)}
+html[data-theme] tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--purple)}
+html[data-theme] th.sortable:hover{color:var(--purple-hi)}
+html[data-theme] .weekly-table th{background:#6b21a8;color:#fff}
+html[data-theme="dark"] .weekly-class{background:#241838;border-left-color:var(--purple-hi)}
+
+/* ---------- Chips / badges (status colours keep their own rules) ---------- */
+.badge,.staff-role{background:rgba(147,51,234,.12);color:#7e22ce}
+html[data-theme="dark"] .badge,html[data-theme="dark"] .staff-role{background:rgba(147,51,234,.22);color:#d8b4fe}
+.grade-pill{background:rgba(251,191,36,.18);color:#a16207}
+html[data-theme="dark"] .grade-pill{background:rgba(251,191,36,.16);color:var(--gold)}
+
+/* ---------- Forms ---------- */
+html[data-theme] input:focus,html[data-theme] select:focus{border-color:var(--purple);box-shadow:0 0 0 4px rgba(147,51,234,.22)}
+html[data-theme="dark"] input,html[data-theme="dark"] select{background:var(--surface-2);border-color:var(--border-strong)}
+input[type=checkbox]{accent-color:var(--purple)}
+
+/* ---------- Messages ---------- */
+.message-icon{background:var(--purple)}
+.unread-dot{background:var(--gold)}
+html[data-theme] .message-row.unread{border-color:rgba(147,51,234,.55);background:rgba(147,51,234,.08)}
+
+/* ---------- Login ---------- */
+.login-wrapper::before{background:var(--purple)}
+.login-wrapper::after{background:var(--gold)}
+html[data-theme] .login-card h1{background-image:linear-gradient(90deg,var(--primary),#c084fc,var(--primary));background-size:200% auto;-webkit-background-clip:text;background-clip:text}
+.theme-corner .ts-track{background:var(--purple);border-color:var(--purple)}
+html[data-theme="dark"] .theme-corner .ts-track{background:#1d1d25;border-color:#3a3a48}

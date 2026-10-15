@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Activity Report | Student Management System{% endblock %}
+{% block content %}
+<section class="panel report-page">
+  <div class="section-title"><div><span class="eyebrow">AUDIT REPORT</span><h1>System Activity Report</h1><p class="muted">Department: <strong>{{ selected_department }}</strong> · Period: <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong></p></div><button class="button primary no-print" type="button" onclick="window.print()">Print / Save as PDF</button></div>
+  <form method="GET" class="activity-filters no-print">
+    {% if user.role == 'Admin' %}<label>Department<select name="department"><option value="All" {% if selected_department == 'All' %}selected{% endif %}>All departments + security events</option>{% for department in departments %}<option value="{{ department }}" {% if selected_department == department %}selected{% endif %}>{{ department }}</option>{% endfor %}</select></label>{% else %}<label>Department<select name="department">{% for department in departments if department in (allowed_departments if allowed_departments is defined else [user.role]) %}<option value="{{ department }}" {% if selected_department == department %}selected{% endif %}>{{ department }}</option>{% endfor %}</select></label>{% endif %}
+    <label>From<input type="date" name="start_date" value="{{ start_date }}" required></label><label>To<input type="date" name="end_date" value="{{ end_date }}" required></label><button class="button primary" type="submit">Generate Report</button><a class="button" href="{{ url_for('dashboard') }}">Back</a>
+  </form>
+  <p><strong>Records:</strong> {{ report_logs|length }}{% if report_logs|length >= 5000 %} (display limit reached; narrow the date range){% endif %} · <strong>Generated:</strong> {{ generated_at.strftime('%Y-%m-%d %I:%M %p %Z') }}</p>
+  <div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Department</th><th>Username</th><th>Action / Event</th></tr></thead><tbody>
+  {% for log in report_logs %}<tr><td>{{ log.created_at|localdt }}</td><td>{{ log.department or 'Legacy / unknown' }}</td><td>{{ log.username }}</td><td>{{ log.action }}</td></tr>{% else %}<tr><td colspan="4">No records match this department and date range.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+<style>@media print { nav, header, footer, .no-print, .flash-container { display:none !important; } body { background:#fff !important; } .panel { box-shadow:none !important; border:0 !important; } table { width:100%; border-collapse:collapse; } th,td { border:1px solid #777 !important; padding:6px !important; color:#000 !important; } }</style>
+{% endblock %}

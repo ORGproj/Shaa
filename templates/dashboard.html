@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Student Management System{% endblock %}
+{% block content %}
+<section class="hero-heading">
+    <div>
+        <span class="eyebrow">CENTRALIZED STUDENT SERVICES</span>
+        <h1>{{ user.role }} Dashboard</h1>
+        <p>Welcome back, <strong>{{ user.username }}</strong>. Use the modules below to manage shared student information.</p>
+    </div>
+    <div class="status-pill"><span></span> System Online</div>
+</section>
+
+<section class="panel announcement-strip" style="margin:1.25rem 0;overflow:hidden;padding:1.25rem;">
+  <div class="section-title announcement-heading" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;">
+    <div><span class="eyebrow">CAMPUS UPDATES</span><h2 style="margin:.2rem 0 0;">Announcements</h2></div>
+    {% if announcements %}
+    <div class="announcement-controls" style="display:flex;gap:.5rem;">
+      <button type="button" class="button announcement-arrow" data-announcement-scroll="left" aria-label="Previous announcements" title="Previous announcements">‹</button>
+      <button type="button" class="button announcement-arrow primary" data-announcement-scroll="right" aria-label="Next announcements" title="Next announcements">›</button>
+    </div>
+    {% endif %}
+  </div>
+  {% if announcements %}
+  <div class="announcement-viewport" style="overflow:hidden;">
+    <div class="announcement-track" style="display:flex;gap:1rem;overflow-x:auto;padding:.25rem 0 .75rem;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;-ms-overflow-style:none;">
+      {% for item in announcements %}
+      <a href="{{ url_for('announcement_detail', announcement_id=item.id) }}" class="announcement-card" style="flex:0 0 min(31rem,85%);box-sizing:border-box;display:block;border:1px solid var(--border,#393746);border-radius:12px;padding:1rem 1.1rem;text-decoration:none;color:inherit;scroll-snap-align:start;min-height:112px;background:var(--panel-bg,rgba(255,255,255,.015));transition:border-color .18s ease,transform .18s ease,background .18s ease;">
+        <strong style="display:block;font-size:1rem;line-height:1.45;margin-bottom:.55rem;">{{ item.title }}</strong>
+        <span class="muted" style="font-size:.8rem;">{{ item.author }} · {{ item.created_at|localdt('%b %d, %Y') }}</span>
+        <p style="margin:.6rem 0 0;color:var(--muted,#aaa);line-height:1.5;">{{ item.body|striptags|truncate(125) }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:.65rem;padding-top:.85rem;border-top:1px solid var(--border,#393746);">
+    <a class="button primary announcement-view-all" href="{{ url_for('announcements') }}" style="display:inline-flex;align-items:center;gap:.55rem;border-radius:9px;padding:.7rem 1.1rem;font-weight:700;text-decoration:none;">View all announcements <span aria-hidden="true">→</span></a>
+  </div>
+  {% else %}
+    <p class="muted">There are no announcements yet.</p>
+    <div style="display:flex;justify-content:flex-end;margin-top:.65rem;padding-top:.85rem;border-top:1px solid var(--border,#393746);"><a class="button primary announcement-view-all" href="{{ url_for('announcements') }}">View all announcements →</a></div>
+  {% endif %}
+  {% if user.role == 'Admin' %}<p style="margin:.75rem 0 0;"><a href="{{ url_for('manage_announcements') }}">Manage announcements</a></p>{% endif %}
+</section>
+<style>
+.announcement-track::-webkit-scrollbar{display:none}
+.announcement-card:hover{border-color:var(--accent,#a855f7)!important;transform:translateY(-2px);background:rgba(168,85,247,.055)!important}
+.announcement-arrow{width:40px;height:40px;min-width:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-size:1.65rem;line-height:1;cursor:pointer;transition:transform .18s ease,filter .18s ease}
+.announcement-arrow:hover{transform:translateY(-1px);filter:brightness(1.12)}
+.announcement-view-all{transition:transform .18s ease,filter .18s ease}
+.announcement-view-all:hover{transform:translateY(-1px);filter:brightness(1.1)}
+@media(max-width:600px){.announcement-card{flex-basis:88%!important}.announcement-heading{align-items:center}.announcement-arrow{width:36px;height:36px;min-width:36px}}
+</style>
+<script>
+(function(){
+  var section=document.querySelector('.announcement-strip');
+  if(!section)return;
+  var track=section.querySelector('.announcement-track');
+  if(!track)return;
+  section.querySelectorAll('[data-announcement-scroll]').forEach(function(button){
+    button.addEventListener('click',function(){
+      var card=track.querySelector('.announcement-card');
+      var distance=card ? card.getBoundingClientRect().width + 16 : track.clientWidth * .8;
+      track.scrollBy({left:(button.dataset.announcementScroll==='right'?distance:-distance),behavior:'smooth'});
+    });
+  });
+})();
+</script>
+
+<div class="cards">
+    <a class="stat-card stat-link" href="{{ url_for('students') if can('students') else '#' }}">
+        <span>Student Records</span><strong>{{ stats.students }}</strong><small>Centralized profiles</small>
+    </a>
+    <a class="stat-card stat-link" href="{{ url_for('courses') if can('courses') else '#' }}">
+        <span>Courses</span><strong>{{ stats.courses }}</strong><small>Academic offerings</small>
+    </a>
+    <a class="stat-card stat-link" href="{{ url_for('payments') if can('payments') else '#' }}">
+        <span>Payments</span><strong>{{ stats.payments }}</strong><small>Recorded transactions</small>
+    </a>
+    <a class="stat-card stat-link" href="{{ url_for('grades') if can('grades') else '#' }}">
+        <span>Grade Records</span><strong>{{ stats.grades }}</strong><small>Academic results</small>
+    </a>
+</div>
+
+<div class="grid-2">
+    <section class="panel">
+        <div class="section-title"><div><span class="eyebrow">WORKFLOW</span><h2>How the system works</h2></div></div>
+        <div class="workflow">
+            <div class="workflow-step"><b>01</b><span>Registrar</span><small>Maintains student records</small></div>
+            <div class="workflow-arrow">→</div>
+            <div class="workflow-step"><b>02</b><span>Central Server</span><small>Processes requests</small></div>
+            <div class="workflow-arrow">→</div>
+            <div class="workflow-step"><b>03</b><span>Shared Database</span><small>Stores centralized data</small></div>
+        </div>
+        <p class="muted">Accounting and Academic users access the same server and shared records according to their assigned roles.</p>
+    </section>
+
+    <section class="panel">
+        <div class="section-title"><div><span class="eyebrow">YOUR MODULES</span><h2>Quick Actions</h2></div></div>
+        <div class="quick-actions">
+            {% if can('students') %}<a class="button primary" href="{{ url_for('students') }}">View Students</a>{% endif %}
+            {% if can('students','create') %}<a class="button" href="{{ url_for('add_student') }}">+ Add Student</a>{% endif %}
+            {% if can('sections') %}<a class="button" href="{{ url_for('sections') }}">{{ 'Manage Sections' if can('sections','edit') or can('sections','create') else 'View Sections' }}</a>{% endif %}
+            {% if can('payments') %}<a class="button" href="{{ url_for('payments') }}">{{ 'Record Payment' if can('payments','create') else 'View Payments' }}</a>{% endif %}
+            {% if can('grades') %}<a class="button" href="{{ url_for('grades') }}">{{ 'Record Grade' if can('grades','create') else 'View Grades' }}</a>{% endif %}
+            {% if can('assessments') %}<a class="button" href="{{ url_for('assessments') }}">{{ 'Manage Assessments' if can('assessments','create') else 'View Assessments' }}</a>{% endif %}
+            {% if can('attendance') %}<a class="button" href="{{ url_for('attendance') }}">{{ 'Take Attendance' if can('attendance','create') else 'View Attendance' }}</a>{% endif %}
+            {% if can('concurrency') %}<a class="button" href="{{ url_for('concurrency') }}">Run Concurrency Test</a>{% endif %}
+        </div>
+    </section>
+</div>
+
+<section class="panel">
+    <div class="section-title"><div><span class="eyebrow">MULTI-USER ACTIVITY</span><h2>System Activity History</h2><p class="muted">Scrollable audit history with date and text filters.</p></div>{% if user.role == "Admin" %}<a class="button primary" href="{{ url_for('staff_management') }}">Manage Staff Members</a>{% endif %}</div>
+    <form class="activity-filters" method="GET"><input class="activity-search" type="search" name="activity_search" value="{{ log_search }}" placeholder="Search username or action"><input class="activity-date" type="date" name="activity_date" value="{{ log_date }}"><select class="activity-type" name="activity_type" aria-label="Filter action type"><option value="">All action types</option>{% for action_type in activity_types %}<option value="{{ action_type }}" {% if log_action_type == action_type %}selected{% endif %}>{{ action_type|replace('_',' ')|title }}</option>{% endfor %}</select>{% if user.role == 'Admin' %}<select class="activity-department" name="department" aria-label="Filter department"><option value="">All departments and security events</option>{% for department in departments %}<option value="{{ department }}" {% if selected_department == department %}selected{% endif %}>{{ department }}</option>{% endfor %}</select>{% else %}<select class="activity-department" name="department" aria-label="Filter department">{% for department in allowed_departments %}<option value="{{ department }}" {% if selected_department == department %}selected{% endif %}>{{ department }}</option>{% endfor %}</select>{% endif %}<button class="button primary activity-submit" type="submit">Filter Activity</button><a class="button activity-clear" href="{{ url_for('dashboard') }}">Clear</a><a class="button activity-report-link" href="{{ url_for('activity_report', department=selected_department or '') }}">Date-range report / Print</a></form>
+    {% if recent_logs %}
+    <div class="activity-scroll"><table><thead><tr><th>User</th><th>Action</th><th>Date / Time</th></tr></thead>
+    <tbody>{% for log in recent_logs %}<tr><td><span class="user-mini">{{ log.username[0]|upper }}</span>{{ log.username }}</td><td>{{ log.action }}</td><td>{{ log.created_at|localdt }}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<div class="empty-state"><div class="empty-icon">✓</div><b>No activity yet</b><p>Actions performed by users will appear here.</p></div>{% endif %}
+</section>
+{% endblock %}

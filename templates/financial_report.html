@@ -1,0 +1,36 @@
+{% extends "base.html" %}{% block title %}Accounting | {{ spec.title }}{% endblock %}{% block content %}
+{% include "_financial_css.html" %}
+{% macro line_row(sec, label, vals, ex) %}<tr class="fr-line{{ ' fr-bold' if sec.bold }}"><td class="fr-label">{% if sec.editable and editable %}<input class="fr-lab" name="label__{{ sec.id }}" value="{{ label }}" maxlength="80" placeholder="Line name" aria-label="Line name">{% else %}{{ label }}<input type="hidden" name="label__{{ sec.id }}" value="{{ label }}">{% endif %}</td>{% for c in range(ncols) %}<td class="fr-num"><span class="fr-wrap{{ ' fr-paren' if sec.paren }}"><input class="fr-in" name="v__{{ sec.id }}__{{ c }}" value="{{ vals[c]|fr_input }}" inputmode="decimal" autocomplete="off" placeholder="-" data-col="{{ c }}" aria-label="{{ columns[c] }}" {{ 'readonly' if not editable }}></span></td>{% endfor %}{% if extra %}<td class="fr-num fr-extra{{ ' fr-bad' if ex is not none and fr_bad(sec.good, ex) }}" data-extra-cell>{% if ex is not none %}{{ (-ex if sec.paren else ex)|fr_money }}{% endif %}</td>{% endif %}<td class="fr-x no-print">{% if sec.editable and editable %}<button type="button" class="fr-del" title="Remove line" aria-label="Remove line">×</button>{% endif %}</td></tr>{% endmacro %}
+
+<div class="page-heading no-print"><div><span class="eyebrow">ACCOUNTING · FINANCIAL REPORTS</span><h1>{{ spec.title }}</h1><p>{{ spec.blurb }}</p></div>
+<div class="quick-actions"><a class="button" href="{{ url_for('financial_reports', period=period) }}">← All reports</a><button class="button" type="button" onclick="window.print()">Print / Save as PDF</button>{% if editable %}<button class="button primary" type="submit" form="frForm">Save report</button>{% endif %}</div></div>
+
+<section class="panel no-print"><div class="fr-period"><form method="GET" class="fr-period"><div><label for="period">Year</label><select id="period" name="period" onchange="this.form.submit()">{% for y in years %}<option value="{{ y }}" {{ 'selected' if y == period }}>{{ y }}</option>{% endfor %}</select></div></form>
+<div>{% if record %}<span class="badge active">Saved</span> <span class="muted">Last saved {{ record.updated_at|localdt }} by {{ record.updated_by }}</span>{% else %}<span class="badge inactive">Not saved yet</span> <span class="muted">This is a template for {{ period }}. Fill in the amounts, then Save report.</span>{% endif %}</div>
+{% if record and editable %}<form method="POST" action="{{ url_for('delete_financial_report', kind=kind) }}" data-confirm="Delete the saved {{ spec.title }} for {{ period }}? The page will go back to a blank template." data-confirm-title="Delete saved report?" data-confirm-ok="Delete report">{{ csrf_input() }}<input type="hidden" name="period" value="{{ period }}"><button class="button small danger" type="submit">Delete saved version</button></form>{% endif %}</div>
+{% if notes %}<div class="fr-notes" style="margin-top:12px">{% for n in notes %}<div>{{ n }}</div>{% endfor %}<small class="muted">You can change any of these amounts before saving.</small></div>{% endif %}
+{% if not editable %}<p class="muted" style="margin:10px 0 0">You have read-only access to this report.</p>{% endif %}</section>
+
+<form id="frForm" method="POST" autocomplete="off">{{ csrf_input() }}<input type="hidden" name="period" value="{{ period }}">{% if record %}<input type="hidden" name="report_id" value="{{ record.id }}"><input type="hidden" name="expected_updated" value="{{ record.updated_at.isoformat() }}">{% endif %}
+<div class="fr-paper {{ 'wide' if spec.wide }}">
+<div class="fr-head"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="School logo"><div><div class="fr-school">ASIAN INSTITUTE OF COMPUTER STUDIES</div><div class="fr-dept">Accounting Department</div></div><div class="fr-stamp">Printed {{ generated.strftime('%b %d, %Y') }}<br>{{ current_user.username }}</div></div>
+<h2 class="fr-title">{{ spec.title }}</h2><p class="fr-sub">{{ subtitle }}</p>
+<div class="fr-scroll"><table class="fr-table{{ ' fr-editing' if editable }}{{ ' fr-wide-cols' if ncols > 3 }}" data-ncols="{{ ncols }}"{% if extra %} data-extra='{{ extra|tojson }}'{% endif %}>
+<thead><tr><th>{{ spec.label_header }}</th>{% for c in columns %}<th>{{ c }}</th>{% endfor %}{% if extra %}<th>{{ extra.label }}</th>{% endif %}<th class="fr-x no-print"></th></tr></thead>
+{% for b in spec.blocks %}{% if b.t == 'head' %}<tbody><tr class="fr-headrow{{ ' band' if b.band }}"><td colspan="{{ span }}">{{ b.label }}</td></tr></tbody>
+{% elif b.t == 'gap' %}<tbody><tr class="fr-gap"><td colspan="{{ span }}"></td></tr></tbody>
+{% elif b.t == 'section' %}<tbody class="fr-sec" data-sec="{{ b.id }}" data-good="{{ b.good or '' }}" data-paren="{{ 1 if b.paren else 0 }}">
+{% if b.label %}<tr class="fr-group"><td colspan="{{ span }}">{{ b.label }}{% if b.paren and editable %}<small class="no-print">type as positive amounts</small>{% endif %}</td></tr>{% endif %}
+{% for row in data.sections[b.id] %}{{ line_row(b, row.label, row.v, result.line_extra[b.id][loop.index0]) }}{% endfor %}
+{% if b.editable and editable %}<tr class="fr-addrow no-print"><td colspan="{{ span }}"><button type="button" class="fr-add">+ Add line</button></td></tr><template class="fr-tpl">{{ line_row(b, '', zero_vals, none) }}</template>{% endif %}
+{% if b.total %}<tr class="fr-total" data-total="{{ b.id }}"><td class="fr-label">{{ b.total }}</td>{% for c in range(ncols) %}{% set v = result.totals[b.id][c] %}<td class="fr-num" data-cell="{{ c }}">{{ (-v if b.paren else v)|fr_money }}</td>{% endfor %}{% if extra %}{% set ex = result.extra[b.id] %}<td class="fr-num fr-extra{{ ' fr-bad' if fr_bad(b.good, ex) }}" data-extra-cell>{{ (-ex if b.paren else ex)|fr_money }}</td>{% endif %}<td class="fr-x no-print"></td></tr>{% endif %}
+</tbody>
+{% elif b.t == 'calc' %}<tbody><tr class="fr-calc{{ ' grand' if b.grand }}" data-calc='{{ b.expr|tojson }}' data-id="{{ b.id }}" data-good="{{ b.good or '' }}"><td class="fr-label">{{ b.label.format(period=period) }}</td>{% for c in range(ncols) %}<td class="fr-num" data-cell="{{ c }}">{{ result.totals[b.id][c]|fr_money }}</td>{% endfor %}{% if extra %}{% set ex = result.extra[b.id] %}<td class="fr-num fr-extra{{ ' fr-bad' if fr_bad(b.good, ex) }}" data-extra-cell>{{ ex|fr_money }}</td>{% endif %}<td class="fr-x no-print"></td></tr></tbody>
+{% endif %}{% endfor %}
+</table></div>
+{% if check %}<div id="frCheck" class="fr-check no-print {{ 'ok' if check.gap == 0 else 'off' }}" data-a="{{ check.a }}" data-b="{{ check.b }}" data-label="{{ check.label }}">{% if check.gap == 0 %}✓ Balanced: {{ check.label }}{% else %}Out of balance by ₱{{ '{:,.2f}'.format(check.gap|abs) }}: {{ check.label }}{% endif %}</div>{% endif %}
+{% if spec.hint %}<p class="fr-hint no-print">{{ spec.hint }}</p>{% endif %}
+<div class="fr-sign"><div>Prepared by</div><div>Reviewed by</div><div>Approved by</div></div>
+</div></form>
+<script src="{{ url_for('static', filename='js/financial-reports.js') }}"></script>
+{% endblock %}

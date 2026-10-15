@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Login Security | Admin{% endblock %}
+{% block content %}
+<div class="page-heading"><div><span class="eyebrow">ADMINISTRATOR ONLY</span><h1>Login Security</h1><p>Review failed sign-in attempts, clear individual notifications from this inbox, and manually clear temporary login throttles. Clearing a notification hides it here but preserves the audit record.</p></div></div>
+<section class="panel">
+  <h2>Locked accounts</h2>
+  <p class="muted">After repeated failed password attempts from any address, an account is locked temporarily and unlocks by itself when the lock period ends. You can unlock an account here sooner. Failed attempts are kept in the audit history even after you clear a notification.</p>
+  <div class="table-wrap"><table><thead><tr><th>Username</th><th>Failed attempts</th><th>Status</th><th>Action</th></tr></thead><tbody>
+  {% for locked in locked_users %}<tr><td>{{ locked.username }}</td><td>{{ locked.failed_login_count }}</td><td><span class="badge danger">Locked</span>{% if locked.locked_until %}<span class="subtext">Unlocks automatically {{ locked.locked_until|localdt }}</span>{% endif %}</td><td><form method="POST" action="{{ url_for('login_security') }}" data-confirm="Unlock {{ locked.username }} so they can try signing in again?" data-confirm-title="Unlock account?" data-confirm-ok="Unlock account">{{ csrf_input() }}<input type="hidden" name="operation" value="unlock"><input type="hidden" name="username" value="{{ locked.username }}"><button class="button small" type="submit">Unlock account</button></form></td></tr>
+  {% else %}<tr><td colspan="4">No accounts are currently locked.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+<section class="panel">
+  <h2>Failed sign-in attempts</h2>
+  <p class="muted">The navigation count shows uncleared failed attempts from the last 24 hours. This page lists up to 200 uncleared notifications. Clear notification hides an item here without deleting the underlying audit record.</p>
+  <div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Username entered</th><th>Event</th><th>Actions</th></tr></thead><tbody>
+  {% for entry in failed_logs %}
+    {% set ip = (entry.action.split(' from ')[1].split(' ')[0] if ' from ' in entry.action else '') %}
+    <tr><td>{{ entry.created_at|localdt }}</td><td>{{ entry.username }}</td><td>{{ entry.action }}</td><td>
+      <div class="button-row" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">{% if ip %}<form method="POST" action="{{ url_for('login_security') }}" data-confirm="Clear the temporary login throttle for {{ entry.username }} from {{ ip }}? The audit record will remain." data-confirm-title="Clear login throttle?" data-confirm-ok="Clear throttle">{{ csrf_input() }}<input type="hidden" name="operation" value="unlock"><input type="hidden" name="username" value="{{ entry.username }}"><input type="hidden" name="ip_address" value="{{ ip }}"><button class="button small" type="submit">Clear attempt lock</button></form>{% endif %}<form method="POST" action="{{ url_for('login_security') }}" data-confirm="Hide this notification from the Login Security inbox? The audit record will be retained." data-confirm-title="Clear notification?" data-confirm-ok="Clear notification">{{ csrf_input() }}<input type="hidden" name="operation" value="dismiss"><input type="hidden" name="log_id" value="{{ entry.id }}"><button class="button small secondary" type="submit">Clear notification</button></form></div>
+    </td></tr>
+  {% else %}<tr><td colspan="4">No uncleared failed-login notifications.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

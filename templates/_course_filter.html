@@ -1,0 +1,53 @@
+{# Shared course filter. Include once per page, then call attachCourseFilter({...}) for each form. #}
+<script>
+(function(){
+  var DATA={{ filter_data|tojson }};
+  window.attachCourseFilter=function(o){
+    var student=document.getElementById(o.student),course=document.getElementById(o.course),
+        term=document.getElementById(o.term),year=document.getElementById(o.year),
+        all=document.getElementById(o.all),hint=document.getElementById(o.hint);
+    if(!student||!course||!term||!year||!all)return;
+    var options=Array.prototype.slice.call(course.options).map(function(op){
+      return {value:op.value,text:op.textContent};
+    });
+    var initial=course.value; // when editing a record, its own course always stays selectable
+    function allowed(){
+      var meta=DATA.students[student.value];
+      if(!meta||meta.program===null||meta.program===undefined)return null;
+      var byYear=(DATA.plan[String(meta.program)]||{})[year.value];
+      if(!year.value){byYear={};var p=DATA.plan[String(meta.program)]||{};
+        Object.keys(p).forEach(function(y){Object.keys(p[y]).forEach(function(t){byYear[t]=(byYear[t]||[]).concat(p[y][t]);});});}
+      if(!byYear)return [];
+      var ids=[];
+      if(byYear[term.value])ids=byYear[term.value];
+      else Object.keys(byYear).forEach(function(t){ids=ids.concat(byYear[t]);}); // Quarter terms: any term of that year
+      return ids.map(String);
+    }
+    function render(){
+      var ids=all.checked?null:allowed(),keep=course.value||initial,shown=0;
+      course.innerHTML='';
+      options.forEach(function(op){
+        if(op.value!==''&&ids&&ids.indexOf(op.value)<0&&op.value!==initial)return;
+        var el=document.createElement('option');el.value=op.value;el.textContent=op.text;
+        if(op.value===keep)el.selected=true;course.appendChild(el);if(op.value!=='')shown++;
+      });
+      if(course.value!==keep&&keep&&keep!==initial)course.value='';
+      if(hint){
+        var meta=DATA.students[student.value];
+        hint.textContent=!student.value?'Select a student to show only the courses for their program, year level and semester.'
+          :(ids===null?(all.checked?'Showing all courses.':'This student has no matching curriculum program, so all courses are shown.')
+          :'Showing '+shown+' course'+(shown===1?'':'s')+' from the student\'s curriculum for the chosen year level and semester.');
+      }
+    }
+    student.addEventListener('change',function(){
+      var meta=DATA.students[student.value];
+      if(meta&&meta.program!==null&&meta.program!==undefined)year.value=String(meta.year);
+      course.value='';initial='';render();
+    });
+    [year,term,all].forEach(function(el){el.addEventListener('change',render);});
+    var meta0=DATA.students[student.value];
+    if(meta0&&!year.dataset.set&&meta0.program!==null&&meta0.program!==undefined&&!o.keepYear)year.value=String(meta0.year);
+    render();
+  };
+})();
+</script>

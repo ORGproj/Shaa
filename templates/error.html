@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Student Management System{% endblock %}
+{% block content %}
+<section class="panel centered error-page">
+  <div class="error-code">{{ code }}</div>
+  <h1>{{ title }}</h1>
+  <p class="muted">{{ message }}</p>
+  {% if code == 400 and request.path == '/messages' and current_user %}
+    <a class="button primary" href="{{ url_for('messages') }}">Reload Messages</a>
+    <p class="muted">For your security, expired forms are not submitted. Copy your message text before refreshing next time, and reselect any attachments after reloading.</p>
+  {% else %}
+    <a class="button primary" href="{{ url_for('dashboard') if current_user else url_for('login') }}">Return to {{ 'Dashboard' if current_user else 'Login' }}</a>
+  {% endif %}
+</section>
+{% endblock %}

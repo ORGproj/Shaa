@@ -1,0 +1,99 @@
+{% extends "base.html" %}{% block title %}Academic | {{ program.short }} Curriculum Plan{% endblock %}{% block content %}
+<style>
+.cur-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.cur-year{margin-bottom:1.5rem}.cur-year>h2{margin:0 0 .25rem}
+.cur-term{margin:1rem 0 1.25rem}.cur-term h3{margin:0 0 .4rem;letter-spacing:.04em;text-transform:uppercase;font-size:.95rem}
+.cur-table{width:100%;border-collapse:collapse}.cur-table th,.cur-table td{border:1px solid rgba(128,128,150,.45);padding:.35rem .6rem;text-align:left}
+.cur-table td.num,.cur-table th.num{text-align:center;width:70px}.cur-table td.code{white-space:nowrap;font-weight:600;width:105px}
+.cur-table .total td{font-weight:700;text-align:right}.cur-table .total td.num{text-align:center}
+.cur-note{padding:.6rem .9rem;border-left:4px solid #d97706;background:rgba(217,119,6,.12);border-radius:4px;margin:.5rem 0}
+.cur-summary{display:flex;flex-wrap:wrap;gap:.6rem;margin:.5rem 0 1rem}.cur-summary span{padding:.3rem .7rem;border:1px solid rgba(128,128,150,.45);border-radius:999px;font-size:.85rem}
+.cur-edit-bar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:.6rem .9rem;border-left:4px solid #2563eb;background:rgba(37,99,235,.10);border-radius:4px;margin:.5rem 0 1rem}
+.cur-table input[type=text],.cur-table input[type=number]{width:100%;min-width:0;padding:.3rem .45rem;box-sizing:border-box}
+.cur-table input.in-units{width:64px;text-align:center}.cur-table td.act{white-space:nowrap;width:150px}.cur-table td.dr{text-align:center;width:60px}
+.cur-table tr.add-row td{background:rgba(128,128,150,.08)}
+.cur-program-forms details{margin:.5rem 0;border:1px solid rgba(128,128,150,.45);border-radius:8px;padding:.5rem .8rem}.cur-program-forms summary{cursor:pointer;font-weight:700}
+.cur-program-forms label{display:block;margin-top:.5rem}.cur-program-forms input[type=text],.cur-program-forms textarea{width:100%;box-sizing:border-box}
+.print-only{display:none}
+@media print{
+ @page{size:A4;margin:12mm}
+ html,body,.app-page{background:#fff!important;color:#000!important}
+ .topbar,.navbar,.no-print,.flash-stack,.theme-corner{display:none!important}
+ .print-only{display:block}.container{max-width:none!important;padding:0!important;margin:0!important}
+ .panel{box-shadow:none!important;border:0!important;padding:0!important;background:#fff!important}
+ .cur-year{break-after:page;page-break-after:always}.cur-year:last-of-type{break-after:auto;page-break-after:auto}
+ .cur-term{break-inside:avoid;page-break-inside:avoid}
+ .cur-table{font-size:9.5pt;color:#000}.cur-table th,.cur-table td{border:1px solid #000!important;padding:2px 6px;color:#000!important;background:transparent!important}
+ .cur-table thead th{background:#e5e7eb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .cur-note{background:#fff3cd!important;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ h1,h2,h3,p{color:#000!important}.print-head{text-align:center;margin-bottom:8px}.print-head h1{font-size:15pt;margin:0}.print-head p{margin:2px 0;font-size:10pt}
+}
+</style>
+<div class="page-heading no-print"><div><span class="eyebrow">ACADEMIC DEPARTMENT</span><h1>{{ (program.short ~ ' Curriculum Plan') if program else 'Curriculum' }}</h1><p>{% if program %}{{ program.name }}: First Year to Fourth Year, with pre-requisites and unit totals.{% else %}No programs yet. Add the first program below.{% endif %}</p></div><div class="quick-actions"><a class="button" href="{{ url_for('courses') }}">Course List</a>{% if program %}<button class="button" type="button" onclick="window.print()">Print / Save as PDF</button>{% endif %}{% if (can_edit or can_create or can_delete) and program %}{% if editing %}<a class="button primary" href="{{ url_for('curriculum', program=program_key, year=selected) }}">Done Editing</a>{% else %}<a class="button primary" href="{{ url_for('curriculum', program=program_key, year=selected, edit=1) }}">Edit Curriculum</a>{% endif %}{% endif %}</div></div>
+<section class="panel">
+{% if program %}<div class="print-only print-head"><h1>{{ program.name }} ({{ program.short }})</h1><p>Curriculum Plan{% if selected %} · {{ years[0].label }}{% else %} · First Year to Fourth Year{% endif %}</p><p>{{ program.reference }}</p></div>
+<div class="cur-tabs no-print">{% for p in programs %}<a class="button {{ 'primary' if p.key == program_key else '' }}" href="{{ url_for('curriculum', program=p.key, edit=1 if editing else None) }}">{{ p.short }}</a>{% endfor %}</div>
+<div class="cur-tabs no-print"><a class="button {{ '' if selected else 'primary' }}" href="{{ url_for('curriculum', program=program_key, edit=1 if editing else None) }}">All Years</a>{% for y in all_years %}<a class="button {{ 'primary' if selected == y.year else '' }}" href="{{ url_for('curriculum', program=program_key, year=y.year, edit=1 if editing else None) }}">{{ y.label }}</a>{% endfor %}</div>
+<div class="cur-summary no-print">{% for y in all_years %}<span>{{ y.label }}: <b>{{ y.total }}</b> units</span>{% endfor %}<span>Program total: <b>{{ grand_total }}</b> units</span></div>{% else %}<div class="cur-tabs no-print">{% for p in programs %}<a class="button" href="{{ url_for('curriculum', program=p.key, edit=1) }}">{{ p.short }}</a>{% endfor %}</div>{% endif %}
+
+{% if editing %}
+<div class="cur-edit-bar no-print"><b>Editing mode.</b> Change a row and press <b>Save</b>; units and totals recalculate automatically. Changes are saved straight to the database and logged in System Activity History.</div>
+<div class="cur-program-forms no-print">
+{% if program and can_edit %}<details><summary>Edit program details: {{ program.short }}</summary>
+<form method="POST" action="{{ url_for('edit_curriculum_program', program_id=program.id) }}">{{ csrf_input() }}<input type="hidden" name="view_year" value="{{ selected or '' }}">
+<label for="p_short">Short name (tab label)</label><input id="p_short" type="text" name="short" maxlength="40" value="{{ program.short }}" required>
+<label for="p_name">Full program name</label><input id="p_name" type="text" name="name" maxlength="100" value="{{ program.name }}" required>
+<label for="p_ref">Reference line (CMO / revision, shown on the printout)</label><input id="p_ref" type="text" name="reference" maxlength="300" value="{{ program.reference }}">
+<label style="display:flex;gap:.5rem;align-items:center"><input type="checkbox" name="draft_all" {% if program.draft_all %}checked{% endif %}> Whole program is a suggested draft (shows the draft notice on every year)</label>
+<label for="p_note">Draft notice text</label><textarea id="p_note" name="draft_note" rows="3" maxlength="1000">{{ program.draft_note }}</textarea>
+<div class="quick-actions" style="margin-top:.6rem"><button class="button primary" type="submit">Save Program</button></div></form></details>{% endif %}
+{% if can_create %}<details><summary>Add a new program</summary>
+<form method="POST" action="{{ url_for('add_curriculum_program') }}">{{ csrf_input() }}<input type="hidden" name="current_program" value="{{ program_key or '' }}">
+<label for="n_short">Short name (tab label)</label><input id="n_short" type="text" name="short" maxlength="40" placeholder="e.g. BS CE" required>
+<label for="n_name">Full program name</label><input id="n_name" type="text" name="name" maxlength="100" placeholder="e.g. Bachelor of Science in Civil Engineering" required>
+<label for="n_ref">Reference line</label><input id="n_ref" type="text" name="reference" maxlength="300" placeholder="e.g. Per CMO no. XX, s. 20XX">
+<label style="display:flex;gap:.5rem;align-items:center"><input type="checkbox" name="draft_all" checked> Mark as a draft until confirmed</label>
+<label for="n_note">Draft notice text</label><textarea id="n_note" name="draft_note" rows="2" maxlength="1000">Confirm or replace every course, unit count and pre-requisite before using it for enrollment.</textarea>
+<div class="quick-actions" style="margin-top:.6rem"><button class="button primary" type="submit">Create Program</button></div></form></details>{% endif %}
+{% if program and can_delete %}<form method="POST" action="{{ url_for('delete_curriculum_program', program_id=program.id) }}" data-confirm="Delete the {{ program.short }} program and all {{ program.courses|length }} of its curriculum courses? This cannot be undone." data-confirm-title="Delete program?" data-confirm-ok="Delete program">{{ csrf_input() }}<button class="button small danger-button" type="submit">Delete {{ program.short }} program</button></form>{% endif %}
+</div>
+{% endif %}
+
+{% for y in years %}
+<div class="cur-year"><h2>{{ y.label|upper }}</h2>
+{% if y.draft and (not program.draft_all or loop.first) %}<div class="cur-note"><b>Draft:</b> {{ program.draft_note }}</div>{% elif program.draft_all and loop.first %}<div class="cur-note"><b>Draft:</b> {{ program.draft_note }}</div>{% endif %}
+{% for t in y.terms %}
+{% set slot = 'y' ~ y.year ~ 't' ~ loop.index %}
+<div class="cur-term"><h3>{{ y.label }} · {{ t.term }}</h3>
+<div class="table-wrap"><table class="cur-table"><thead><tr><th>Course No.</th><th>Descriptive Title</th><th class="num">Unit</th><th>Pre-Requisite</th>{% if editing %}<th class="num no-print">Draft</th><th class="no-print">Actions</th>{% endif %}</tr></thead><tbody>
+{% for c in t.courses %}
+{% if editing and (can_edit or can_delete) %}<tr>
+<td class="code"><input type="text" form="ef{{ c.id }}" name="code" value="{{ c.code }}" maxlength="30" required aria-label="Course number" {% if not can_edit %}readonly{% endif %}></td>
+<td><input type="text" form="ef{{ c.id }}" name="title" value="{{ c.title }}" maxlength="200" required aria-label="Descriptive title" {% if not can_edit %}readonly{% endif %}></td>
+<td class="num"><input class="in-units" type="number" form="ef{{ c.id }}" name="units" value="{{ c.units }}" min="0" max="12" required aria-label="Units" {% if not can_edit %}readonly{% endif %}></td>
+<td><input type="text" form="ef{{ c.id }}" name="prereq" value="{{ c.prereq }}" maxlength="200" aria-label="Pre-requisite" {% if not can_edit %}readonly{% endif %}></td>
+<td class="dr no-print"><input type="checkbox" form="ef{{ c.id }}" name="draft" {% if c.draft %}checked{% endif %} aria-label="Draft" {% if not can_edit %}disabled{% endif %}></td>
+<td class="act no-print"><div class="quick-actions">{% if can_edit %}<button class="button small primary" type="submit" form="ef{{ c.id }}">Save</button>{% endif %}{% if can_delete %}<button class="button small danger-button" type="submit" form="df{{ c.id }}">Delete</button>{% endif %}</div></td></tr>
+{% else %}<tr><td class="code">{{ c.code }}</td><td>{{ c.title }}</td><td class="num">{{ c.units }}</td><td>{{ c.prereq }}</td>{% if editing %}<td class="dr no-print">{{ 'Yes' if c.draft else '' }}</td><td class="no-print"></td>{% endif %}</tr>{% endif %}
+{% else %}<tr><td colspan="{{ 6 if editing else 4 }}" class="muted">No courses in this term yet.</td></tr>
+{% endfor %}
+<tr class="total"><td colspan="2">TOTAL UNITS</td><td class="num">{{ t.total }}</td><td></td>{% if editing %}<td class="no-print"></td><td class="no-print"></td>{% endif %}</tr>
+{% if editing and can_create %}<tr class="add-row no-print">
+<td class="code"><input type="text" form="af-{{ slot }}" name="code" maxlength="30" placeholder="e.g. ENGG 120" required aria-label="New course number"></td>
+<td><input type="text" form="af-{{ slot }}" name="title" maxlength="200" placeholder="New course title" required aria-label="New descriptive title"></td>
+<td class="num"><input class="in-units" type="number" form="af-{{ slot }}" name="units" min="0" max="12" value="3" required aria-label="New course units"></td>
+<td><input type="text" form="af-{{ slot }}" name="prereq" maxlength="200" placeholder="NONE" aria-label="New course pre-requisite"></td>
+<td class="dr"><input type="checkbox" form="af-{{ slot }}" name="draft" aria-label="New course is a draft"></td>
+<td class="act"><button class="button small primary" type="submit" form="af-{{ slot }}">+ Add</button></td></tr>{% endif %}
+</tbody></table></div>
+{% if editing %}<div class="no-print">
+{% if can_create %}<form id="af-{{ slot }}" method="POST" action="{{ url_for('add_curriculum_course', program_id=program.id) }}">{{ csrf_input() }}<input type="hidden" name="year" value="{{ y.year }}"><input type="hidden" name="term" value="{{ t.term }}"><input type="hidden" name="view_year" value="{{ selected or '' }}"></form>{% endif %}
+{% for c in t.courses %}{% if can_edit %}<form id="ef{{ c.id }}" method="POST" action="{{ url_for('edit_curriculum_course', course_id=c.id) }}">{{ csrf_input() }}<input type="hidden" name="view_year" value="{{ selected or '' }}"></form>{% endif %}
+{% if can_delete %}<form id="df{{ c.id }}" method="POST" action="{{ url_for('delete_curriculum_course', course_id=c.id) }}" data-confirm="Remove {{ c.code }} from the {{ program.short }} curriculum?" data-confirm-title="Remove course?" data-confirm-ok="Remove course">{{ csrf_input() }}<input type="hidden" name="view_year" value="{{ selected or '' }}"></form>{% endif %}{% endfor %}
+</div>{% endif %}
+</div>
+{% endfor %}
+<p><b>{{ y.label }} total: {{ y.total }} units</b></p></div>
+{% endfor %}
+{% if program and not selected %}<p><b>Program total: {{ grand_total }} units</b></p>{% endif %}
+</section>{% endblock %}

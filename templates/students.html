@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Registrar | Students{% endblock %}
+{% block content %}
+<div class="page-heading"><div><span class="eyebrow">{% if current_user.role == "Academic" %}ACADEMIC DEPARTMENT{% else %}REGISTRAR DEPARTMENT{% endif %}</span><h1>Student Records</h1><p>{% if can('students','create') or can('students','edit') or can('students','delete') %}Search, review, add, and maintain centralized student information.{% else %}View and search student records. Adding, editing, and deleting requires access granted by an Admin.{% endif %}</p></div>{% if can('students','create') %}<a class="button primary" href="{{ url_for('add_student') }}">+ Add Student</a>{% endif %}</div>
+<section class="panel filter-panel">
+<form class="search-bar" method="GET">
+    <div class="search-input"><span>⌕</span><input type="search" name="search" value="{{ search }}" placeholder="Search student no., name, email, or degree program"></div>
+    <select name="status"><option value="">All statuses</option>{% for status in ["Active","Inactive","Graduated"] %}<option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select>
+    <select name="section_id" aria-label="Filter by section"><option value="">All sections</option>{% for section in sections %}<option value="{{ section.id }}" {% if section_filter == section.id %}selected{% endif %}>{{ section.name }}</option>{% endfor %}</select><button class="button primary" type="submit">Search</button><a class="button" href="{{ url_for('students') }}">Clear</a>
+</form>
+<div class="result-line"><span>{{ students|length }} record{% if students|length != 1 %}s{% endif %} found</span><span class="muted">Registrar access · centralized database</span></div>
+</section>
+<section class="panel"><div class="table-wrap history-scroll"><table><thead><tr><th>Student</th><th>Contact</th><th>Program</th><th>Section</th><th>Year</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+{% for student in students %}<tr>
+<td><a class="table-link" href="{{ url_for('student_detail', student_id=student.id) }}"><b>{{ student.student_number }}</b><span>{{ student.first_name }} {{ student.last_name }}</span></a></td>
+<td>{{ student.email }}</td><td>{{ student.course }}</td><td>{{ student.section.name if student.section else "-" }}</td><td>Year {{ student.year_level }}</td><td><span class="badge {{ student.status|lower }}">{{ student.status }}</span></td>
+<td><div class="actions"><a class="button small" href="{{ url_for('student_detail', student_id=student.id) }}">View</a><a class="button small" href="{{ url_for('report_card', student_id=student.id) }}">Report Card</a>{% if can('students','edit') %}<a class="button small" href="{{ url_for('edit_student', student_id=student.id) }}">Edit</a>{% endif %}{% if can('students','delete') %}<form method="POST" action="{{ url_for('delete_student', student_id=student.id) }}" data-confirm="This will permanently delete the student record and remove its linked payment, grade, assessment, and attendance records." data-confirm-title="Delete this student?" data-confirm-ok="Delete student">{{ csrf_input() }}<button class="button small danger" type="submit">Delete</button></form>{% endif %}</div></td>
+</tr>{% else %}<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">⌕</div><b>No students found</b><p>{% if can('students','create') %}Try another search or add a new student.{% else %}Try another search.{% endif %}</p></div></td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

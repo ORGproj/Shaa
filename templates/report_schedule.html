@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Registrar | Master Schedule{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">{% endblock %}
+{% block content %}
+<div class="report-hero"><div><span class="eyebrow">REGISTRAR · OPERATIONAL REPORT</span><h1>Master Schedule &amp; Room Utilization</h1><p>Every scheduled class with its room, capacity and actual enrollment. Enrollment is the number of Active students in the class section.</p></div><div class="quick-actions no-print"><a class="button" href="{{ url_for('reports') }}">← Reports</a><button class="button primary" type="button" onclick="window.print()">Print / Save as PDF</button></div></div>
+<div class="print-head"><h2>Master Course Schedule</h2></div>
+<div class="report-kpis"><div><b>{{ rows|length }}</b><span>Classes shown</span></div><div><b>{{ over_count }}</b><span>Over capacity</span></div><div><b>{{ conflicts|length }}</b><span>Scheduling conflicts</span></div><div><b>{{ room_rows|length }}</b><span>Rooms in use</span></div></div>
+
+<section class="panel"><form class="report-filters" method="GET"><div><label for="day">Day</label><select id="day" name="day"><option value="">All days</option>{% for d in weekdays %}<option value="{{ d }}" {% if day_filter == d %}selected{% endif %}>{{ d }}</option>{% endfor %}</select></div><div><label for="room">Room</label><select id="room" name="room"><option value="">All rooms</option>{% for r in rooms %}<option value="{{ r }}" {% if room_filter|lower == r|lower %}selected{% endif %}>{{ r }}</option>{% endfor %}</select></div><button class="button primary" type="submit">Apply</button><a class="button" href="{{ url_for('report_schedule') }}">Clear</a></form>
+<div class="table-wrap"><table class="report-table"><thead><tr><th>Course ID</th><th>Course title</th><th>Professor</th><th>Room</th><th>Day</th><th>Time</th><th>Section</th><th class="num">Cap</th><th class="num">Enrolled</th><th class="num">Open</th><th>Status</th></tr></thead><tbody>
+{% for r in rows %}<tr><td><b>{{ r.course_id }}</b></td><td class="wrap">{{ r.title }}</td><td>{{ r.professor }}</td><td>{{ r.room }}</td><td>{{ r.day }}</td><td>{{ r.start }}-{{ r.end }}</td><td>{{ r.section }}</td><td class="num">{{ r.capacity }}</td><td class="num">{{ r.enrolled }}</td><td class="num">{{ r.open }}</td><td><span class="pill {{ 'bad' if r.status == 'Over capacity' else 'warn' if r.status == 'Full' else 'ok' }}">{{ r.status }}</span></td></tr>
+{% else %}<tr><td colspan="11" class="empty">No classes scheduled. Add classes on the Class Timetable page.</td></tr>{% endfor %}
+</tbody></table></div></section>
+
+<section class="panel report-sheet"><span class="eyebrow">ROOM UTILIZATION</span><h2>Weekly room usage</h2>
+<p class="muted">Utilization = scheduled hours out of {{ week_hours }} available hours per week (Mon-Fri, 07:00-18:00).</p>
+<div class="table-wrap"><table class="report-table" data-no-filter><thead><tr><th>Room</th><th class="num">Classes / week</th><th class="num">Hours / week</th><th style="min-width:200px">Utilization</th></tr></thead><tbody>
+{% for r in room_rows %}<tr><td><b>{{ r.room }}</b></td><td class="num">{{ r.classes }}</td><td class="num">{{ r.hours }}</td><td><div class="bar-row" style="grid-template-columns:1fr auto"><div class="bar-track"><div class="bar-fill" style="width:{{ [r.pct,100]|min }}%"></div></div><b>{{ r.pct }}%</b></div></td></tr>{% else %}<tr><td colspan="4" class="empty">No rooms in use yet.</td></tr>{% endfor %}
+</tbody></table></div></section>
+
+<section class="panel"><span class="eyebrow">CONFLICT CHECK</span><h2>Double bookings</h2>
+{% if conflicts %}<ul>{% for c in conflicts %}<li>{{ c }}</li>{% endfor %}</ul>{% else %}<p><span class="pill ok">No conflicts</span> No instructor, room or section is booked twice at the same time.</p>{% endif %}</section>
+{% endblock %}

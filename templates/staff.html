@@ -1,0 +1,54 @@
+{% extends "base.html" %}{% block title %}Admin | Staff Accounts{% endblock %}{% block content %}
+<div class="page-heading"><div><span class="eyebrow">ADMINISTRATOR ONLY</span><h1>Manage Staff Members</h1><p>Create, edit, or remove vetted staff accounts. Public self-registration is disabled.</p></div></div>
+<div class="grid-2"><section class="panel"><span class="eyebrow">{{ "EDIT ACCOUNT" if edit_user else "NEW ACCOUNT" }}</span><h2>{{ "Edit Staff Member" if edit_user else "Add a Staff Member" }}</h2><form method="POST" {% if not edit_user %}data-new-staff-account="true"{% endif %}>{{ csrf_input() }}{% if edit_user %}<input type="hidden" name="user_id" value="{{ edit_user.id }}">{% endif %}<label for="username">Username</label><input id="username" name="username" minlength="3" maxlength="50" pattern="[A-Za-z0-9_.-]+" value="{{ edit_user.username if edit_user else '' }}" placeholder="e.g. registrar.jane" required><label for="password">{{ "New password (optional)" if edit_user else "Temporary Password" }}</label><input id="password" type="password" name="password" minlength="12" autocomplete="new-password" placeholder="{{ 'Leave blank to keep current password' if edit_user else 'At least 12 characters' }}" {% if not edit_user %}required{% endif %}><label for="role">Department / Role</label><select id="role" name="role" required>{% for role in roles %}<option value="{{ role }}" {% if edit_user and edit_user.role == role %}selected{% endif %}>{{ role }}</option>{% endfor %}</select><details class="panel staff-advanced-settings" style="margin-top:1rem"><summary style="cursor:pointer;font-weight:700;padding:.25rem 0">System Activity History access <span class="muted">(Advanced settings) ▼</span></summary><div style="padding-top:.75rem"><p class="muted">Choose which departments and action categories this account can view. Administrators always have full activity-history access.</p><fieldset style="border:1px solid var(--border-color, #777);border-radius:10px;padding:.75rem;margin:.75rem 0"><legend><b>Departments this account can view</b></legend><p class="muted">Select one or more departments. For example, a Registrar can be granted access to Accounting and Academic history too.</p>{% for department in activity_departments %}<label style="display:flex;align-items:center;gap:.5rem;margin:.45rem 0"><input type="checkbox" name="activity_departments" value="{{ department }}" {% if not edit_user and department == (role if role in activity_departments else 'Registrar') or edit_user and department in edit_departments %}checked{% endif %}> {{ department }} department</label>{% endfor %}</fieldset><fieldset style="border:1px solid var(--border-color, #777);border-radius:10px;padding:.75rem"><legend><b>Action categories</b></legend>
+{% for action_type in activity_types %}<label style="display:flex;align-items:center;gap:.5rem;margin:.45rem 0"><input type="checkbox" name="activity_visibility" value="{{ action_type }}" {% if not edit_user or action_type in edit_visibility %}checked{% endif %}> {{ action_type|title }} actions</label>{% endfor %}
+</fieldset>
+<fieldset style="border:1px solid var(--border-color, #777);border-radius:10px;padding:.75rem;margin-top:1rem">
+<legend><b>Advanced module access control</b></legend>
+<p class="muted">Grant access per module. View-only accounts can open pages but cannot submit changes; Create, Edit, and Delete are independently enforced on the server. Admin accounts always have full access.</p>
+<label style="display:flex;align-items:center;gap:.5rem;margin:.65rem 0;font-weight:700"><input type="checkbox" name="grant_everything" id="grant_everything" {% if edit_user and edit_user.role == 'Admin' %}checked disabled{% endif %}> Grant everything (View, Create, Edit, Delete in every module)</label>
+<div class="table-wrap"><table><thead><tr><th>Module</th><th>View</th><th>Create</th><th>Edit</th><th>Delete</th></tr></thead><tbody>
+{% for module, module_label in access_modules.items() %}<tr><td><b>{{ module_label }}</b></td>
+{% if module in admin_only_modules %}<td colspan="4" class="muted">Admin only &mdash; cannot be delegated</td>{% else %}
+{% for action in access_actions %}<td><label aria-label="{{ action|title }} {{ module_label }}"><input type="checkbox" class="module-permission" data-module="{{ module }}" name="perm_{{ module }}_{{ action }}" value="on" {% if edit_user and edit_user.role == 'Admin' or action in edit_permissions.get(module, []) %}checked{% endif %}></label></td>{% endfor %}{% endif %}</tr>{% endfor %}
+</tbody></table></div>
+</fieldset></div></details><div class="quick-actions"><button class="button primary" type="submit">{{ "Save Changes" if edit_user else "Create Staff Account" }}</button>{% if edit_user %}<a class="button" href="{{ url_for('staff_management') }}">Cancel</a>{% endif %}</div></form><p class="muted">Share credentials privately. Passwords are stored as secure hashes.</p></section>
+<section class="panel"><span class="eyebrow">AUTHORIZED USERS</span><h2>Current Accounts</h2><div class="table-wrap scroll-list"><table><thead><tr><th>Username</th><th>Role</th><th>Actions</th></tr></thead><tbody>{% for user in staff %}<tr><td><b>{{ user.username }}</b>{% if current_user.id == user.id %}<span class="subtext">Your account</span>{% endif %}</td><td><span class="staff-role">{{ user.role }}</span></td><td><div class="quick-actions"><a class="button small" href="{{ url_for('staff_management', edit=user.id) }}">Edit</a>{% if current_user.id != user.id %}<form method="POST" action="{{ url_for('delete_staff', user_id=user.id) }}" data-confirm="Delete the staff account {{ user.username }}? This cannot be undone." data-confirm-title="Delete staff account?" data-confirm-ok="Delete account">{{ csrf_input() }}<button class="button small danger-button" type="submit">Delete</button></form>{% endif %}</div></td></tr>{% else %}<tr><td colspan="3">No staff accounts.</td></tr>{% endfor %}</tbody></table></div></section></div>
+
+<script>
+(() => {
+  // New account: until the admin ticks departments by hand, follow the chosen role.
+  const form = document.querySelector('form[data-new-staff-account="true"]');
+  if (!form) return;
+  const role = form.querySelector('#role');
+  const departmentChecks = [...form.querySelectorAll('input[name="activity_departments"]')];
+  let userChangedDepartments = false;
+  departmentChecks.forEach((checkbox) => checkbox.addEventListener('change', () => { userChangedDepartments = true; }));
+  role?.addEventListener('change', () => {
+    if (userChangedDepartments) return;
+    departmentChecks.forEach((checkbox) => { checkbox.checked = checkbox.value === role.value; });
+  });
+})();
+</script>
+<script>
+(() => {
+  const all = document.getElementById('grant_everything');
+  const checks = [...document.querySelectorAll('.module-permission')].filter(c => !c.disabled);
+  if (all && !all.disabled) {
+    all.addEventListener('change', () => checks.forEach(c => { c.checked = all.checked; }));
+    const sync = () => { all.checked = checks.length > 0 && checks.every(c => c.checked); };
+    checks.forEach(c => c.addEventListener('change', sync));
+    sync();
+  }
+  // Picking a different role loads that role's default permissions so the matrix never keeps a stale preset.
+  const roleSelect = document.getElementById('role');
+  const defaults = {{ role_defaults|tojson }};
+  roleSelect?.addEventListener('change', () => {
+    const preset = defaults[roleSelect.value];
+    if (!preset) return;
+    checks.forEach(c => { c.checked = (preset[c.dataset.module] || []).includes(c.name.split('_').pop()); });
+    if (all) all.checked = checks.every(c => c.checked);
+  });
+})();
+</script>
+{% endblock %}

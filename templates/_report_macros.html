@@ -1,0 +1,10 @@
+{% macro pie(chart, empty="No data yet.") -%}
+{% if chart.total %}<div class="pie-wrap"><div class="pie" role="img" aria-label="Pie chart" style="background:conic-gradient({{ chart.gradient }})"><span class="pie-hole"><b>{{ chart.total }}</b><small>total</small></span></div>
+<ul class="legend">{% for r in chart.rows %}<li><i style="background:{{ r.color }}"></i>{{ r.label }}<span>{{ r.count }} · {{ r.pct }}%</span></li>{% endfor %}</ul></div>
+{% else %}<p class="muted">{{ empty }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro bars(chart, empty="No data yet.") -%}
+{% if chart.total %}<div class="bar-list">{% for r in chart.rows %}<div class="bar-row"><span class="bar-label" title="{{ r.label }}">{{ r.label }}</span><div class="bar-track"><div class="bar-fill" style="width:{{ r.bar }}%;background:{{ r.color }}"></div></div><b>{{ r.count }}</b></div>{% endfor %}</div>
+{% else %}<p class="muted">{{ empty }}</p>{% endif %}
+{%- endmacro %}

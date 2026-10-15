@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Messages | Student Management System{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><span class="eyebrow">INTERNAL COMMUNICATION</span><h1>✉ Messages</h1>
+  <p>Send enrollment, transcript, graduation, and payment questions directly to the right department.</p></div>
+  <span class="message-count-pill">{{ unread_count }} unread</span>
+</div>
+<div class="message-layout">
+  <section class="panel compose-panel">
+    <span class="eyebrow">NEW REQUEST</span><h2>Compose message</h2>
+    <form method="POST" enctype="multipart/form-data">{{ csrf_input() }}
+      <label for="recipient_mode">Message type</label>
+      <select id="recipient_mode" name="recipient_mode" required onchange="toggleMessageRecipient()">
+        <option value="department">Department message</option><option value="private">Private message to an account</option>
+      </select>
+      <div id="department-recipient">
+        <label for="recipient_role">Send to department</label>
+        <select id="recipient_role" name="recipient_role" required>
+          <option value="">Choose department…</option><option value="Registrar">Registrar - enrollment, records, transcripts</option><option value="Accounting">Accounting - payments and financial history</option>
+        </select>
+      </div>
+      <div id="private-recipient" hidden>
+        <label for="recipient_user_id">Send privately to account</label>
+        <select id="recipient_user_id" name="recipient_user_id" disabled>
+          <option value="">Choose account…</option>{% for account in accounts %}<option value="{{ account.id }}">{{ account.username }} — {{ account.role }}</option>{% endfor %}
+        </select>
+        <p class="muted">Only you and the selected account can view this private message and its attachments.</p>
+      </div>
+      <label for="category">Request type</label>
+      <select id="category" name="category" required>
+        <option>Request for Information</option><option>Enrollment / Registration</option><option>Transcript / Grade History</option><option>Graduation Requirements</option><option>Payment History</option><option>Payment Clarification</option><option>Other</option>
+      </select>
+      <label for="subject">Subject</label><input id="subject" name="subject" maxlength="140" placeholder="e.g. Request for latest payment history" required>
+      <label for="body">Message details</label><textarea id="body" name="body" rows="6" maxlength="5000" placeholder="Include the student number and the information you need. Avoid sending passwords or sensitive payment-card details." required></textarea>
+      <label for="message-attachments">Attachments (optional)</label>
+      <input id="message-attachments" type="file" name="attachments" accept=".png,.jpg,.jpeg,.webp,.pdf,application/pdf,image/png,image/jpeg,image/webp" multiple>
+      <p class="muted">Attach up to 5 PNG, JPG, JPEG, WEBP images/screenshots or PDF files. Combined request limit: 12 MB. Images preview when you open the sent or received message.</p>
+      <button class="button primary full" type="submit">✉ Send Message</button>
+    </form>
+    <p class="muted message-note">Messages stay inside this app; they are not sent as external email. Messages can be reviewed in the recipient department inbox.</p>
+  </section>
+  <section class="panel inbox-panel">
+    <div class="section-title"><div><span class="eyebrow">{% if view == 'sent' %}OUTGOING{% elif view == 'archived' %}ARCHIVED{% else %}INBOX{% endif %}</span><h2>{% if view == 'sent' %}Sent messages{% elif view == 'archived' %}Archived messages{% else %}Inbox{% endif %}</h2></div></div>
+    <div class="message-tabs"><a class="button {% if view == 'inbox' %}primary{% endif %}" href="{{ url_for('messages', view='inbox', q=search_query or None) }}">Inbox</a><a class="button {% if view == 'sent' %}primary{% endif %}" href="{{ url_for('messages', view='sent', q=search_query or None) }}">Sent</a><a class="button {% if view == 'archived' %}primary{% endif %}" href="{{ url_for('messages', view='archived', q=search_query or None) }}">Archived</a></div>
+    <form class="message-search" method="GET" action="{{ url_for('messages') }}">
+      <input type="hidden" name="view" value="{{ view }}">
+      <span class="message-search-icon" aria-hidden="true">⌕</span>
+      <input type="search" name="q" value="{{ search_query }}" maxlength="200" placeholder="Search messages" aria-label="Search messages" autocomplete="off">
+      <button class="button primary" type="submit">Search</button>
+      {% if search_query %}<a class="button" href="{{ url_for('messages', view=view) }}">Clear</a>{% endif %}
+    </form>
+    {% if search_query %}<p class="muted message-search-summary">Search results for <b>{{ search_query }}</b> - {{ messages|length }} message(s) shown.</p>{% endif %}
+    {% if opened_message %}
+      <article class="message-open">
+        <div class="message-open-top"><span class="badge">{{ opened_message.category }}</span><small>{{ opened_message.created_at|localdt }}</small></div>
+        <h3>{{ opened_message.subject }}</h3>
+        <p class="muted">From <b>{{ opened_message.sender.username if opened_message.sender else 'Deleted account' }}</b> · To <b>{{ opened_message.recipient_role }}</b></p>
+        {% if opened_message.recipient_user_id %}<p class="muted"><b>Private message</b> · To {{ opened_message.recipient_user.username if opened_message.sender_id == current_user.id else 'you' }}</p>{% endif %}
+        <div class="message-body">{{ opened_message.body }}</div>
+        {% set attachment_items = json_loads(opened_message.attachments or '[]') %}
+        {% if attachment_items %}<div class="message-attachments"><b>Attachments</b><ul>{% for attachment in attachment_items %}<li>{% if attachment.kind == 'image' %}🖼️{% else %}📄{% endif %} <a href="{{ url_for('download_message_attachment', message_id=opened_message.id, attachment_index=loop.index0) }}">{{ attachment.original_name }}</a>{% if attachment.kind == 'image' %}<div><a href="{{ url_for('download_message_attachment', message_id=opened_message.id, attachment_index=loop.index0) }}" target="_blank" rel="noopener"><img src="{{ url_for('download_message_attachment', message_id=opened_message.id, attachment_index=loop.index0) }}" alt="Attached image: {{ attachment.original_name }}" loading="lazy" style="max-width:100%;max-height:360px;border-radius:8px;margin:8px 0 12px;object-fit:contain"></a></div>{% endif %}</li>{% endfor %}</ul></div>{% endif %}
+      </article>
+    {% endif %}
+    <div class="message-list">
+      {% for item in messages %}
+      <div class="message-row {% if not item.is_read and view == 'inbox' %}unread{% endif %}">
+        <div class="message-icon">✉</div><div class="message-main">
+          <div class="message-subject"><b>{{ item.subject }}</b>{% if not item.is_read and view == 'inbox' %}<span class="unread-dot" title="Unread"></span>{% endif %}</div>
+          <p>{{ item.category }} · {% if item.recipient_user_id %}🔒 Private · {% endif %}{% if view == 'sent' %}To {{ item.recipient_user.username if item.recipient_user_id else item.recipient_role }}{% else %}From {{ item.sender.username if item.sender else 'Deleted account' }}{% endif %}</p>
+          <small>{{ item.created_at|localdt }}</small>
+        </div>
+        <div class="message-actions">
+          <form method="POST" action="{{ url_for('open_message', message_id=item.id) }}">{{ csrf_input() }}<input type="hidden" name="q" value="{{ search_query }}"><button class="button small" type="submit">Open</button></form>
+          <form method="POST" action="{{ url_for('manage_message', message_id=item.id, action='unarchive' if view == 'archived' else 'archive') }}">{{ csrf_input() }}<input type="hidden" name="return_view" value="{{ view }}"><input type="hidden" name="q" value="{{ search_query }}"><button class="button small" type="submit">{{ 'Restore' if view == 'archived' else 'Archive' }}</button></form>
+          <form method="POST" action="{{ url_for('manage_message', message_id=item.id, action='delete') }}" onsubmit="return confirm('Delete this message from your mailbox?');">{{ csrf_input() }}<input type="hidden" name="return_view" value="{{ view }}"><input type="hidden" name="q" value="{{ search_query }}"><button class="button small danger" type="submit">Delete</button></form>
+        </div>
+      </div>
+      {% else %}<div class="empty-state"><div class="empty-icon">✉</div><b>{{ 'No matching messages' if search_query else 'No messages yet' }}</b><p>{{ 'Try another keyword or clear your search.' if search_query else 'New department requests will appear here.' }}</p></div>{% endfor %}
+    </div>
+  </section>
+</div>
+<script>
+function toggleMessageRecipient() {
+  const isPrivate = document.getElementById('recipient_mode').value === 'private';
+  const department = document.getElementById('department-recipient');
+  const privateBox = document.getElementById('private-recipient');
+  const roleSelect = document.getElementById('recipient_role');
+  const userSelect = document.getElementById('recipient_user_id');
+  department.hidden = isPrivate;
+  privateBox.hidden = !isPrivate;
+  roleSelect.disabled = isPrivate;
+  roleSelect.required = !isPrivate;
+  userSelect.disabled = !isPrivate;
+  userSelect.required = isPrivate;
+}
+toggleMessageRecipient();
+</script>
+{% endblock %}

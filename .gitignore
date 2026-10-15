@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+.pytest_cache/
+
+# Secrets and local configuration
+.env
+.env.*
+instance/
+
+# Databases and SQLite side files (local data, backups, WAL)
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*.db-journal
+*.bak
+
+# Uploaded student photos (never commit personal data)
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Test and runtime output
+concurrency_results.json
+server_log.txt
+*.log
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}{{ announcement.title }} | Announcements{% endblock %}
+{% block content %}
+<section class="panel" style="max-width:1000px;margin:0 auto;"><a href="{{ url_for('announcements') }}">← All announcements</a><h1 style="margin-top:1.5rem;">{{ announcement.title }}</h1><p class="muted">Posted by {{ announcement.author }} · {{ announcement.created_at|localdt('%B %d, %Y') }}</p><div style="white-space:pre-wrap;line-height:1.8;margin-top:2rem;">{{ announcement.body }}</div></section>
+{% endblock %}

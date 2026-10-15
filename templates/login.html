@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Login | Student Management System{% endblock %}
+{% block content %}
+<div class="login-wrapper"><div class="login-card"><div class="login-brand"><img class="login-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="Institute logo"><span class="eyebrow">Asian Institute of Computer Studies</span><h1>Student Management System</h1><p class="muted">One for All, All for One</p></div>
+<form method="POST">{{ csrf_input() }}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}<label for="username">Username</label><input id="username" type="text" name="username" placeholder="Enter username" required autocomplete="username"><label for="password">Password</label><input id="password" type="password" name="password" placeholder="Enter password" required autocomplete="current-password"><button type="submit" class="button primary full">Sign In</button></form>
+<p class="muted" style="font-size:12px;text-align:center;margin-top:18px">Staff accounts are issued by an authorized administrator.</p>
+</div></div>
+{% endblock %}

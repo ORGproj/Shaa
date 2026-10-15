@@ -1,0 +1,58 @@
+{% extends "base.html" %}{% block title %}Report Card | {{ student.student_number }}{% endblock %}{% block content %}
+<style>
+.rc-sheet{max-width:820px;margin:0 auto}
+.rc-head{display:flex;align-items:center;justify-content:center;gap:14px;text-align:center;margin-bottom:10px}
+.rc-head img{width:70px;height:70px;object-fit:contain}.rc-head h1{margin:0;font-size:1.35rem;letter-spacing:.03em}.rc-head p{margin:2px 0;font-size:.85rem}
+.rc-title{text-align:center;margin:10px 0 12px;font-size:1.15rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;border-top:2px solid currentColor;border-bottom:2px solid currentColor;padding:5px 0}
+.rc-info{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin-bottom:12px;font-size:.92rem}
+.rc-info div{display:flex;gap:6px;border-bottom:1px solid rgba(128,128,150,.5);padding:2px 0}.rc-info small{min-width:105px;opacity:.75}
+.rc-term{margin:14px 0}.rc-term h3{margin:0 0 4px;font-size:.95rem;text-transform:uppercase;letter-spacing:.05em}
+.rc-table{width:100%;border-collapse:collapse;font-size:.92rem}.rc-table th,.rc-table td{border:1px solid rgba(128,128,150,.55);padding:4px 8px;text-align:left}
+.rc-table .num{text-align:center;width:72px}.rc-table .code{white-space:nowrap;font-weight:600;width:95px}
+.rc-table tfoot td{font-weight:700}.rc-pass{font-weight:700;color:#15803d}.rc-fail{font-weight:700;color:#b91c1c}
+.rc-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.rc-summary div{border:1px solid rgba(128,128,150,.55);padding:6px;text-align:center}.rc-summary b{display:block;font-size:1.2rem}.rc-summary span{font-size:.75rem;opacity:.8}
+.rc-sign{display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;margin-top:46px;text-align:center;font-size:.85rem}.rc-sign div{border-top:1px solid currentColor;padding-top:4px}
+.rc-legend{font-size:.78rem;opacity:.85;margin-top:12px}
+.rc-period{text-align:center;margin:6px 0 2px;font-size:1rem}.rc-period b{display:inline-block;padding:1px 14px;border-bottom:2px solid currentColor;letter-spacing:.04em}
+.rc-badge{display:inline-block;margin-left:8px;padding:1px 10px;border:1px solid currentColor;border-radius:999px;font-size:.75rem;letter-spacing:.06em;vertical-align:middle}
+.rc-scale{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:14px;font-size:.8rem}.rc-scale table{width:100%;border-collapse:collapse}.rc-scale th,.rc-scale td{padding:1px 8px 1px 0;text-align:left;border:0}.rc-scale thead th{border-bottom:1px solid currentColor}
+.rc-scale-title{font-weight:700;margin:0 0 4px}
+.rc-picker{display:flex;flex-wrap:wrap;gap:.6rem;align-items:end;margin-bottom:1rem}
+@media print{
+ @page{size:A4;margin:12mm}
+ html,body,.app-page{background:#fff!important;color:#000!important}
+ .topbar,.navbar,.no-print,.flash-stack,.theme-corner,.page-heading{display:none!important}
+ .container{max-width:none!important;padding:0!important;margin:0!important}
+ .panel{box-shadow:none!important;border:0!important;padding:0!important;background:#fff!important}
+ .rc-sheet{max-width:none;color:#000}.rc-term{break-inside:avoid;page-break-inside:avoid}
+ .rc-table th,.rc-table td,.rc-summary div,.rc-info div{border-color:#000!important;color:#000!important}
+ .rc-table thead th{background:#e5e7eb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .rc-pass,.rc-fail{color:#000!important}
+ .rc-badge{border-color:#000!important}
+}
+</style>
+<div class="page-heading no-print"><div><span class="eyebrow">ACADEMIC · REPORT CARD</span><h1>{{ student.first_name }} {{ student.last_name }}</h1><p>{{ student.student_number }} · {{ student.course }}</p></div><div class="quick-actions"><a class="button" href="{{ url_for('student_detail', student_id=student.id) }}">← Back to profile</a><button class="button primary" type="button" onclick="window.print()">Print / Save as PDF</button></div></div>
+<section class="panel">
+<form class="rc-picker no-print" method="GET"><div><label for="semester">Report period</label><select id="semester" name="semester" onchange="this.form.submit()">{% for s in semesters %}<option value="{{ s }}" {{ 'selected' if chosen == s else '' }}>{{ s }}</option>{% endfor %}{% if semesters|length > 1 %}<option value="all" {{ 'selected' if chosen == 'all' else '' }}>All semesters (full record)</option>{% endif %}</select></div><noscript><button class="button" type="submit">Show</button></noscript></form>
+<div class="rc-sheet">
+<div class="rc-head"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="School logo"><div><h1>ASIAN INSTITUTE OF COMPUTER STUDIES</h1><p>Office of the Registrar · Academic Department</p></div></div>
+<div class="rc-title">Grade Report Card</div>
+{% if single_period %}<div class="rc-period"><b>{{ single_period.term or single_period.semester }}</b>{% if single_period.school_year %}, S.Y. <b>{{ single_period.school_year }}</b>{% endif %}</div>{% elif terms|length > 1 %}<div class="rc-period">Full record: {{ terms|length }} semesters / periods</div>{% endif %}
+<div class="rc-info">
+<div><small>Student name</small><b>{{ student.last_name|upper }}, {{ student.first_name }}</b></div><div><small>Student no.</small><b>{{ student.student_number }}</b></div>
+<div><small>Program</small><b>{{ student.course }}</b></div><div><small>Year level</small><b>Year {{ student.year_level }}</b></div>
+<div><small>Section</small><b>{{ student.section.name if student.section else 'Not assigned' }}</b></div><div><small>Status</small><b>{{ student.status }}</b></div>
+</div>
+{% for t in terms %}
+<div class="rc-term"><h3>{{ t.term or t.semester }}{% if t.school_year %} · S.Y. {{ t.school_year }}{% endif %}<span class="rc-badge">{{ t.badge }}</span></h3>
+<table class="rc-table"><thead><tr><th>Course No.</th><th>Descriptive Title</th><th class="num">Units</th><th class="num">Rating</th><th class="num">Grade</th><th>Remarks</th></tr></thead><tbody>
+{% for g in t.rows %}<tr><td class="code">{{ g.course.code }}</td><td>{{ g.course.name }}</td><td class="num">{{ g.course.units }}</td><td class="num">{{ '-' if g.mark else '%.0f'|format(g.grade) ~ '%' }}</td><td class="num"><b>{{ g.shown }}</b></td><td class="{{ 'rc-pass' if g.remark == 'PASSED' else ('rc-fail' if g.remark.startswith('FAILED') else '') }}">{{ g.remark }}</td></tr>{% endfor %}
+</tbody><tfoot><tr><td colspan="2" style="text-align:right">Units graded / semester average</td><td class="num">{{ t.units }}</td><td></td><td class="num">{{ '%.2f'|format(t.average) if t.average is not none else '-' }}</td><td></td></tr></tfoot></table></div>
+{% else %}<p class="muted" style="text-align:center;padding:1.5rem 0">No grades have been recorded for this student yet. Add final grades on the Grades page, then reopen this report card.</p>{% endfor %}
+{% if terms %}
+<div class="rc-summary"><div><b>{{ '%.2f'|format(general_average) if general_average is not none else '-' }}</b><span>General weighted average (1.00 highest)</span></div><div><b>{{ graded_units }}</b><span>Units graded</span></div><div><b>{{ passed_units }}</b><span>Units passed</span></div><div><b>{{ attendance_totals.Present + attendance_totals.Late }} / {{ attendance_totals.Present + attendance_totals.Late + attendance_totals.Absent + attendance_totals.Excused }}</b><span>Days attended / recorded</span></div></div>
+<div class="rc-scale"><div><p class="rc-scale-title">Grading System</p><table><thead><tr><th>Percentage Rating</th><th>Grade</th><th>Description</th></tr></thead><tbody>{% for rng, gr, desc in grading_scale %}<tr><td>{{ rng }}</td><td>{{ gr }}</td><td>{{ desc }}</td></tr>{% endfor %}</tbody></table></div><div><p class="rc-scale-title">Special Marks</p><table><thead><tr><th>Grade</th><th>Description</th></tr></thead><tbody>{% for code, info in special_marks.items() %}<tr><td>{{ code }}</td><td>{{ info[0] }}</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="rc-legend">Rating is the final percentage; Grade is its equivalent on the 1.00 - 5.00 scale (percentages are rounded to a whole number first). General weighted average is weighted by units and excludes INC and AW; UW and NCA count as 5.00. Attendance counts Present and Late as attended and covers all recorded dates. Issued {{ issued_on.strftime('%B %d, %Y') }} by {{ issued_by }}. Not valid without the Registrar's signature.</div>
+<div class="rc-sign"><div>Class Adviser</div><div>Academic Department Head</div><div>Registrar</div></div>
+{% endif %}
+</div></section>{% endblock %}
